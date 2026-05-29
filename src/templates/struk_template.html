@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Struk Thermal 58mm</title>
+    <link href="{{fontConfig.googleFontsUrl}}" rel="stylesheet">
+    <style>
+        /* Pengaturan Dasar untuk Simulasi & Print */
+        body {
+            background-color: #f0f2f5 !important; 
+            font-family: 'Roboto Mono', 'Courier New', Courier, monospace !important;
+            font-variant-numeric: slashed-zero;
+            font-feature-settings: "zero" 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .receipt {
+            background-color: #ffffff !important;
+            width: 226px; 
+            padding: 25px 12px;
+            position: relative;
+            color: #000;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Efek Bergerigi Atas */
+        .receipt::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(-45deg, #ffffff 6px, transparent 0), 
+                        linear-gradient(45deg, #ffffff 6px, transparent 0);
+            background-position: left bottom;
+            background-repeat: repeat-x;
+            background-size: 8px 8px;
+        }
+
+        /* Efek Bergerigi Bawah */
+        .receipt::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(-45deg, transparent 6px, #ffffff 0), 
+                        linear-gradient(45deg, transparent 6px, #ffffff 0);
+            background-position: left top;
+            background-repeat: repeat-x;
+            background-size: 8px 8px;
+        }
+
+        .header { text-align: center; margin-bottom: 15px; }
+        
+        .logo-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .logo-img {
+            max-width: 100px;
+            height: auto;
+            filter: grayscale(100%) contrast(150%);
+        }
+
+        .separator { 
+            width: 100%;
+        }
+
+        .double-separator-box {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Base class untuk baris info */
+        .info-row { 
+            display: flex;
+            line-height: 1.2;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .info-row.row-inline {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .info-row.row-stacked {
+            flex-direction: column;
+        }
+
+        .info-row span.label-text {
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .info-row span.value-text {
+            word-break: break-all;
+            display: inline-block;
+        }
+
+        .title_section { 
+            display: block; 
+            margin-bottom: 8px; 
+            text-transform: uppercase;
+            line-height: 1.2;
+            width: 100%;
+        }
+
+        @media print {
+            body { 
+                background-color: white !important; 
+                padding: 0; 
+                margin: 0;
+            }
+            .receipt { 
+                box-shadow: none; 
+                margin: 0 auto;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="receipt" style="font-family: '{{fontConfig.name}}', {{fontConfig.fallback}} !important;">
+    {{#each elements}}
+        
+        {{#if isLogo}}
+            <div class="logo-wrapper" style="margin-top: {{marginTop}}px; margin-bottom: {{marginBottom}}px;">
+                <img src="{{src}}" style="width: {{width}}px; height: auto;" class="logo-img">
+            </div>
+        {{/if}}
+
+        {{#if isTitle}}
+            <div class="title_section" style="text-align: {{alignment}}; font-size: {{fontSize}}px; font-weight: {{fontWeight}}; color: {{color}}; margin-top: {{marginTop}}px; margin-bottom: {{marginBottom}}px; letter-spacing: {{letterSpacing}}px; {{#if hasBorder}}border: 2px solid {{color}}; padding: 5px;{{/if}}">
+                {{value}}
+            </div>
+        {{/if}}
+
+        {{#if isSeparator}}
+            {{#if isDouble}}
+                <div class="double-separator-box" style="margin-top: {{marginTop}}px; margin-bottom: {{marginBottom}}px; height: calc({{thickness}}px * 2 + 2px);">
+                    <div style="border-top: {{thickness}}px {{borderType}} {{color}};"></div>
+                    <div style="border-top: {{thickness}}px {{borderType}} {{color}};"></div>
+                </div>
+            {{else}}
+                <div class="separator" style="border-top: {{thickness}}px {{borderType}} {{color}}; margin-top: {{marginTop}}px; margin-bottom: {{marginBottom}}px;"></div>
+            {{/if}} 
+        {{/if}}
+
+        {{#if isInput}}
+            <div class="info-row {{#if isStacked}}row-stacked{{else}}row-inline{{/if}}" 
+                 style="margin-top: {{marginTop}}px; 
+                        margin-bottom: {{marginBottom}}px; 
+                        gap: {{gap}}px; 
+                        color: {{color}}; 
+                        {{#if isCentered}}text-align: center; justify-content: center; align-items: center;{{/if}}
+                        {{#if hasBorder}}border: 2px solid {{color}}; padding: 8px;{{/if}}">
+                
+                {{#if showLabel}}
+                    <span class="label-text" style="font-size: {{labelFontSize}}px; font-weight: {{labelFontWeight}}; letter-spacing: {{labelLetterSpacing}}px;">{{label}}</span>
+                {{/if}}
+                
+                <span class="value-text" style="font-size: {{valueFontSize}}px; font-weight: {{valueFontWeight}}; letter-spacing: {{valueLetterSpacing}}px; {{#if isStacked}}{{else}}{{#if isCentered}}{{else}}text-align: right; flex: 1;{{/if}}{{/if}}">{{value}}</span>
+            </div>
+        {{/if}}
+
+    {{/each}}
+</div>
+
+</body>
+</html>

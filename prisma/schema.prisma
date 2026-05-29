@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StatusLisensi {
+  FREE_TIER
+  SILVER_TIER
+  GOLDEN_TIER
+  PLATINUM_TIER
+}
+ 
+model User {
+  id                String        @id @default(cuid())
+  name              String?
+  email             String?       @unique
+  whatsappNumber    String?       @unique
+  password          String? 
+  kuota             Int           @default(10)
+  license           StatusLisensi @default(FREE_TIER)
+  receipts          Receipt[]
+  layouts           Layout[]
+  settings          Settings[]
+  lastLogin         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+ 
+  @@map("users")
+}
+
+model Receipt {
+  id        String   @id @default(cuid())
+  nama      String
+  userId    String
+  layoutId  String?
+  type      String   // "manual", "upload"
+  content   Json
+  total     Float?   
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)  
+  layout    Layout?  @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("receipts")
+}
+
+model Layout {
+  id          String   @id @default(cuid())
+  name        String   // Nama layout, misal: "Struk Bengkel A"
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isDefault   Boolean  @default(false) // Tandai layout default untuk pengguna
+  config      Json     
+  receipts    Receipt[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("layouts")
+}
+
+model Settings {
+  id          String  @id @default(cuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data        Json
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model UserStatistic {
+  id                String   @id @default(uuid())
+  userId            String
+  date              DateTime
+  
+  pdfCount          Int      @default(0)
+  imageCount        Int      @default(0)
+  directPrintCount  Int      @default(0)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+
+  @@map("user_statistics")
+}
