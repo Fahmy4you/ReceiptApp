@@ -144,38 +144,39 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
                     dataType: el.dataType
                 }));
 
-            // const res = await fetch("/api/image_to_raw_struk", {
-            //     method: "POST",
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({
-            //         imageBase64: formData.struk_image.split(",")[1],
-            //         mimeType: formData.struk_image.split(";")[0].split(":")[1],
-            //         targetFields: fieldsToExtract, 
-            //     }),
-            // });
+            const res = await fetch("/api/image_to_raw_struk", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imageBase64: formData.struk_image.split(",")[1],
+                    mimeType: formData.struk_image.split(";")[0].split(":")[1],
+                    targetFields: fieldsToExtract, 
+                }),
+            });
 
-            // if (!res.ok) {
-            //     setAlert({
-            //         'type': 'error',
-            //         'message': 'Terjadi kesalahan saat OCR, Coba lagi'
-            //     });
-            //     return;
-            // }
-
-            // const aiResponse = await res.json();
-            const aiResponse: any = {
-                "success": true,
-                "extractedData": {
-                    "kode_referensi": "0120260516104503",
-                    "tanggal": "16 Mei 2026",
-                    "waktu": "17:45",
-                    "nama": "Ibunya Mimay",
-                    "e-wallet": "GoPay",
-                    "no.hp": "****2500",
-                    "nominal": "100000"
-                },
-                "modelUsed": "gemini-3-flash-preview"
+            if (!res.ok) {
+                setToast({
+                    type: 'error',
+                    title: 'Gagal',
+                    message: "Terjadi kesalahan saat OCR, Coba lagi"
+                });
+                return;
             }
+
+            const aiResponse = await res.json();
+            // const aiResponse: any = {
+            //     "success": true,
+            //     "extractedData": {
+            //         "kode_referensi": "0120260516104503",
+            //         "tanggal": "16 Mei 2026",
+            //         "waktu": "17:45",
+            //         "nama": "Ibunya Mimay",
+            //         "e-wallet": "GoPay",
+            //         "no.hp": "****2500",
+            //         "nominal": "100000"
+            //     },
+            //     "modelUsed": "gemini-3-flash-preview"
+            // }
             console.log(aiResponse);
 
             if(aiResponse.error) {

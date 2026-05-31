@@ -21,7 +21,7 @@ import {
 import fpPromise from '@fingerprintjs/fingerprintjs';
 import Cookies from 'js-cookie';
 import { getOrCreateCurrentUser, getUserById } from '@/models/User';
-import { getUserDashboardStats, trackUserPrintActivity } from '@/models/UserStatistic';
+import { getUserDashboardStats } from '@/models/UserStatistic';
 import LoadingScreenSkeleton from '@/components/Loading';
 import { labelWaktu, STATUS_LISENSI_LABELS } from '@/lib/constanta';
 import TrendChart from '@/components/TrendChart';
@@ -298,7 +298,7 @@ export default function PageHomeClient() {
             <div className="mt-4">
               {/* Menampilkan totalSemua hasil akumulasi dari backend */}
               <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {stats.totalSemua}
+                {stats.totalPrint}
               </h4>
               <p className={`text-[10px] md:text-xs font-bold flex items-center gap-1 mt-1 ${
                 stats.percentPrint >= 0 ? 'text-emerald-500' : 'text-rose-500'

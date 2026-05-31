@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000'],
+      allowedOrigins: ['struk.bydils.site','localhost:3000'],
     },
   },
 };

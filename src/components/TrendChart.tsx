@@ -24,6 +24,7 @@ export default function TrendChart({ chartData, filter }: TrendChartProps) {
     { label: 'Kam, 28', pdf: 0, gambar: 0, print: 0, total: 0 },
     { label: 'Jum, 29', pdf: 0, gambar: 0, print: 0, total: 0 }
   ];
+  console.log(dataGrafik)
 
   const svgWidth = 500;
   const svgHeight = 200;
