@@ -1,4 +1,10 @@
-import { ReceiptElement, SettingsData } from "@/lib/types";
+import { PricingPlan, ReceiptElement, SettingsData } from "@/lib/types";
+import { 
+  LuCpu, 
+  LuZap, 
+  LuCrown, 
+  LuSparkles
+} from "react-icons/lu";
 
 export const DEFAULT_NAME_APP = "StrukApp v1.0"
 
@@ -88,6 +94,91 @@ export const RECEIPT_TYPE_LABELS: Record<string, string> = {
   RECEIPT_UPLOAD: "Struk OCR Mode",
   RECEIPT_MANUAL: "Struk Manual Mode",
 };
+
+export const LIST_LICENSE: PricingPlan[] = [
+    {
+      id: "FREE_TIER",
+      name: "Free Tier",
+      tagline: "Sempurna untuk mencoba kehebatan fitur dasar StrukApp",
+      priceMonthly: 0,
+      priceAnnually: 0,
+      tokens: "1 Token OCR / Hari",
+      layouts: "Maksimal 3 Layout Struk",
+      features: [
+        "1 Token OCR otomatis per hari",
+        "Buat hingga 3 layout kustom",
+        "Ekspor PDF kualitas standard thermal",
+        "Ekspor Gambar PNG resolusi biasa",
+        "Akses dasar ke riwayat pembuatan struk",
+      ],
+      colorTheme: "border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900",
+      buttonTheme: "bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-white",
+      icon: LuCpu,
+    },
+    {
+      id: "SILVER_TIER",
+      name: "Silver Tier",
+      tagline: "Cocok untuk UMKM dengan transaksi harian skala sedang",
+      priceMonthly: 29000,
+      priceAnnually: 278000, // Discounted annually (Save ~20%)
+      tokens: "30 Token OCR / Hari",
+      layouts: "Maksimal 5 Layout Struk",
+      features: [
+        "30 Token OCR otomatis setiap hari",
+        "Buat hingga 5 layout kustom",
+        "Ekspor PDF instan kualitas tinggi",
+        "Ekspor Gambar PNG resolusi tinggi",
+        "Cetak langsung ke Bluetooth Thermal 58mm",
+        "Riwayat tak terbatas (History)",
+      ],
+      colorTheme: "border-blue-200 dark:border-blue-900/50 text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900",
+      buttonTheme: "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20",
+      icon: LuZap,
+    },
+    {
+      id: "GOLDEN_TIER",
+      name: "Golden Tier",
+      tagline: "Paling populer untuk kasir & ritel profesional tingkat lanjut",
+      priceMonthly: 79000,
+      priceAnnually: 758000, // Discounted annually (Save ~20%)
+      tokens: "100 Token OCR / Hari",
+      layouts: "Maksimal 10 Layout Struk",
+      features: [
+        "100 Token OCR otomatis setiap hari",
+        "Buat hingga 10 layout kustom",
+        "Ekspor PDF & PNG Ultra-HD",
+        "Integrasi printer thermal instan",
+        "Prioritas antrian pengenalan teks AI OCR",
+        "Akses awal ke template struk premium",
+        "Dukungan bantuan prioritas pelanggan",
+      ],
+      badgeText: "TERLARIS",
+      colorTheme: "border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/40 dark:ring-amber-500/30 text-slate-800 dark:text-zinc-100 bg-amber-50/10 dark:bg-amber-500/[0.02]",
+      buttonTheme: "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/20",
+      icon: LuCrown,
+    },
+    {
+      id: "PLATINUM_TIER",
+      name: "Platinum Tier",
+      tagline: "Kekuatan penuh tanpa batas untuk perusahaan & multi-cabang",
+      priceMonthly: 149000,
+      priceAnnually: 1428000, // Discounted annually (Save ~20%)
+      tokens: "Unlimited Token OCR",
+      layouts: "Maksimal 20 Layout Struk",
+      features: [
+        "Token OCR Tanpa Batas (Unlimited)",
+        "Buat hingga 20 layout kustom",
+        "Ekspor PDF, PNG, & format mentah Excel",
+        "Multi-perangkat & multi-printer thermal",
+        "AI OCR tingkat lanjut (struk rusak/buram)",
+        "Manajer akun personal khusus",
+        "Garansi prioritas server uptime 99.9%",
+      ],
+      colorTheme: "border-purple-300 dark:border-purple-900/50 text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900",
+      buttonTheme: "bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20",
+      icon: LuSparkles,
+    },
+  ];
 
 export const DefaultConfigLayout: ReceiptElement[] = [
   {

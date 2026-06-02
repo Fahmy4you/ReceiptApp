@@ -1,6 +1,6 @@
+import { StatusLisensi } from "@prisma/client"
 import NextAuth, { type DefaultSession } from "next-auth"
 
-type StatusLisensi = "FREE_TIER" | "PREMIUM" | string; 
 
 declare module "next-auth" {
   interface Session {

@@ -1,5 +1,6 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, StatusLisensi } from "@prisma/client";
 import { weightConstanta } from "@/lib/constanta";
+import { IconType } from "react-icons";
 
 export interface AdminRange {
   id: string;
@@ -131,4 +132,25 @@ export type ThemeType = 'light' | 'dark' | 'system';
 export interface ThemeContextType {
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
+}
+
+export interface ToastState {
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+}
+
+export interface PricingPlan {
+  id: StatusLisensi;
+  name: string;
+  tagline: string;
+  priceMonthly: number;
+  priceAnnually: number;
+  tokens: string;
+  layouts: string;
+  features: string[];
+  colorTheme: string;
+  buttonTheme: string;
+  badgeText?: string;
+  icon: IconType;
 }

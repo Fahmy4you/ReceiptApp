@@ -130,7 +130,7 @@ export default function PageHomeClient() {
   useEffect(() => {
     fetchStatistik();
     getReceiptsData();
-  }, [])
+  }, [session.status])
 
   const currentLabel = labelWaktu[stats.filterAman as keyof typeof labelWaktu] || "vs tahun lalu";
   if(loading) return <LoadingScreenSkeleton/>
@@ -287,16 +287,16 @@ export default function PageHomeClient() {
                   <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider">Sisa Kuota OCR</span>
                   <p className="font-black text-lg text-white mt-0.5">
                     {session.data?.user.kuota ?? 0} <span className="text-xs text-blue-200 font-bold">Scan</span>
-                  </p>
+                </p>
                 </div>
                 
-                <button 
+                <Link href="/license" 
                   className="bg-white cursor-pointer hover:bg-slate-100 text-blue-600 p-2.5 rounded-xl text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-black/10 shrink-0"
                   title="Isi Ulang Kuota"
                 >
                   <FiPlus className="w-4 h-4 stroke-[3]" />
                   <span>Isi Kuota</span>
-                </button>
+                </Link>
               </div>
 
             </div>
