@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // Menggunakan react-icons (Fi untuk Feather, Fa6 untuk Font Awesome modern)
 import { 
   FiFileText, 
@@ -13,7 +13,11 @@ import {
   FiUploadCloud,
   FiCamera,
   FiLayers,
-  FiUsers
+  FiUsers,
+  FiUser,
+  FiLayout,
+  FiLogOut,
+  FiChevronDown
 } from 'react-icons/fi';
 import { 
   FaArrowUpRightFromSquare,
@@ -30,6 +34,7 @@ import Link from 'next/link';
 import { signInWithGoogle } from '@/lib/action';
 import Toast from '@/components/Toast';
 import { useSession } from 'next-auth/react';
+import { LuLoader, LuUserPen } from 'react-icons/lu';
 
 export default function PageHomeClient() {
   const [copied, setCopied] = useState(false);
@@ -52,10 +57,18 @@ export default function PageHomeClient() {
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const session = useSession();
 
   const handleGoogleLogin = async () => {
     setLoadingGoogle(true);
+    if(session.status == "authenticated") {
+      setToast({ type: 'info', title: 'Info', message: 'Anda sudah masuk dengan Google' });
+      setLoadingGoogle(false);
+      return;
+    }
+
     try {
       await signInWithGoogle();
     } catch (err) {
@@ -86,8 +99,9 @@ export default function PageHomeClient() {
           limit: 3 
         });
         setReceiptsData(receiptTerbaru)
+      } else {
+        setReceiptsData(exampleHistoryData as any)
       }
-      setReceiptsData(exampleHistoryData as any)
     } catch(err) {
       setToast({ type: 'error', title: 'Error', message: "Gagal mendapatkan statistik " + err });
     } finally {
@@ -123,20 +137,87 @@ export default function PageHomeClient() {
                 </h3>
               </div>
               
-              {/* Link Bantuan dengan Kaca Transparan (Glassmorphism) */}
               <div className="flex gap-2 flex-wrap">
-                <button 
-                  onClick={handleGoogleLogin}
-                  className="cursor-pointer self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm">
-                  <FaGoogle className="w-4 h-4 text-white/80" /> Login Google
-                </button>
-                <a 
+                {session.status == "authenticated" ? (
+                  <div className="relative" ref={dropdownRef}>
+                    <button 
+                      onClick={() => setShowDropdown(!showDropdown)} 
+                      title={session.data?.user?.name || "User"}
+                      className="cursor-pointer self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm"
+                    >
+                      <FiUser className="w-4 h-4 text-white/80" /> 
+                      {session.data?.user?.name && session.data.user.name.length > 10 
+                        ? `${session.data.user.name.slice(0, 10)}...` 
+                        : session.data?.user?.name
+                      }
+                      <FiChevronDown className={`w-3 h-3 text-white/60 transition-transform duration-200 ${showDropdown ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {showDropdown && (
+                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl shadow-xl py-1.5 z-[110] animate-in fade-in slide-in-from-top-2 duration-150">
+                        
+                        {/* DASHBOARD UNTUK ADMIN */}
+                        {session.data?.user.role?.role === "admin" && (
+                          <Link 
+                            href="/dashboard"
+                            onClick={() => setShowDropdown(false)}
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/50 transition-colors"
+                          >
+                            <FiLayout className="w-4 h-4 text-slate-400" />
+                            <span>Dashboard</span>
+                          </Link>
+                        )}
+                        <Link 
+                          href="/profile"
+                          onClick={() => setShowDropdown(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/50 transition-colors"
+                        >
+                          <LuUserPen  className="w-4 h-4 text-slate-400" />
+                          <span>Profil</span>
+                        </Link>
+
+                        <div className="border-t border-slate-100 dark:border-zinc-800/60 my-1"></div>
+
+                        <button 
+                          onClick={() => {
+                            // setShowDropdown(false);
+                            // signOut();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors text-left cursor-pointer"
+                        >
+                          <FiLogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
+
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleGoogleLogin}
+                    disabled={loadingGoogle}
+                    className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 w-full md:w-auto self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10 shadow-sm"
+                  >
+                    {loadingGoogle ? (
+                      <>
+                        <LuLoader className="w-4 h-4 text-white/80 animate-spin" />
+                        <span>Menghubungkan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaGoogle className="w-4 h-4 text-white/80" /> 
+                        <span>Login Google</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                <Link 
                   href=""
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="cursor-pointer self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm">
                   <FiHelpCircle className="w-4 h-4 text-white/80" /> Chat Bantuan
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -157,7 +238,7 @@ export default function PageHomeClient() {
                 <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider">Status Lisensi</span>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
-                  <p className="font-bold text-sm text-white">{STATUS_LISENSI_LABELS[userData?.license ?? ""] || "No License"}</p>
+                  <p className="font-bold text-sm text-white">{STATUS_LISENSI_LABELS[session.data?.user.license ?? ""] || "No License"}</p>
                 </div>
               </div>
 
@@ -172,7 +253,7 @@ export default function PageHomeClient() {
                 >
                   {/* Perbaikan: Tambah truncate agar text hash yang kepanjangan otomatis terpotong titik-titik (...) */}
                   <code className="font-mono text-xs text-blue-200 font-medium select-all group-hover:text-white transition-colors truncate block">
-                    {"Silahkan Login Untuk Mendapat Referral Code"}
+                    {session.status == "authenticated" ? session.data?.user.id : "Silahkan Login Untuk Mendapat Referral Code"}
                   </code>
                   {/* Perbaikan: shrink-0 biar tombol copy-nya gak ikut gepeng */}
                   <button 
@@ -190,7 +271,7 @@ export default function PageHomeClient() {
                 <div className="flex flex-col justify-center">
                   <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider">Sisa Kuota OCR</span>
                   <p className="font-black text-lg text-white mt-0.5">
-                    {userData?.kuota ?? 0} <span className="text-xs text-blue-200 font-bold">Scan</span>
+                    {session.data?.user.kuota ?? 0} <span className="text-xs text-blue-200 font-bold">Scan</span>
                   </p>
                 </div>
                 

@@ -1197,7 +1197,7 @@ export const exampleHistoryData = [
       },
       "kode_referensi": "0516104503"
     },
-    layoutId: null,
+    layoutId: "DEFAULT_EWALLET_LAYOUT",
     nama: "Ibunya Mimay",
     total: 102500,
     type: "RECEIPT_UPLOAD",

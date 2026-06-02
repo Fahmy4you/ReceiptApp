@@ -2,6 +2,7 @@
 
 import { TableSpinnerLoader } from "@/components/Loading";
 import Toast from "@/components/Toast";
+import PreviewPage from "@/components/PreviewPage"; // <-- Pastikan impor ini sesuai path kamu
 import { exampleLayoutData } from "@/lib/constanta";
 import { SettingsData } from "@/lib/types";
 import { deleteLayout, getAllLayouts } from "@/models/Layout";
@@ -10,6 +11,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FiCalendar, FiDatabase, FiEdit2, FiPlus, FiSearch, FiTrash2, FiEye } from "react-icons/fi";
+import { normalizeKey } from "@/lib/Helpers";
 
 export default function PageLayoutListClient({settingsData}: {settingsData: SettingsData | null}) {
   const [layouts, setLayouts] = useState<Awaited<ReturnType<typeof getAllLayouts>>>([]);
@@ -19,17 +21,22 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
   const session = useSession();
   const router = useRouter();
 
+  // --- STATE UNTUK PREVIEW MODAL ---
+  const [showModal, setShowModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<any[]>([]);
+  const [strukData, setStrukData] = useState<Record<string, any>>({});
+
   // Ambil data dari database saat komponen pertama kali dimuat
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Memanggil fungsi getAllLayouts (bisa dilempar parameter filter jika butuh)
       if(session.status == "authenticated") {
         const data = await getAllLayouts();
         setLayouts(data);
+      } else {
+        setLayouts(exampleLayoutData as any);
       }
-
-      setLayouts(exampleLayoutData as any);
     } catch (error) {
       console.error("Gagal memuat data layout:", error);
     } finally {
@@ -46,6 +53,39 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handlePreview = (item: any) => {
+    // Amankan jika ternyata item.config dari database masih berbentuk string JSON
+    let configArray = item.config;
+    if (typeof configArray === 'string') {
+      try {
+        configArray = JSON.parse(configArray);
+      } catch (e) {
+        console.error("Gagal parse JSON config:", e);
+        configArray = [];
+      }
+    }
+
+    // Bangun formData menggunakan normalizeKey(label) agar match dengan PreviewPage
+    const extractedFormData: Record<string, any> = {
+      showAdmin: true, // Berikan default value seperti di manual page
+    };
+    
+    if (Array.isArray(configArray)) {
+      configArray.forEach((cfg) => {
+        if (cfg.type === 'input_text' && cfg.label) {
+          // Ganti key dari cfg.dataType menjadi normalizeKey(cfg.label)
+          const key = normalizeKey(cfg.label);
+          extractedFormData[key] = cfg.exampleValue || "";
+        }
+      });
+    }
+
+    // Set semua state preview khusus untuk item yang diklik ini
+    setSelectedConfig(configArray);
+    setStrukData(extractedFormData); 
+    setShowModal(true);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Apakah Anda yakin ingin menghapus riwayat ini?")) return;
 
@@ -57,26 +97,13 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
     try {
       const result = await deleteLayout(id);
       if (result.success) {
-        // Update state secara lokal agar UI langsung berubah
         setLayouts((prev) => prev.filter((item) => item.id != id));
-        setToast({
-          type: 'success',
-          title: 'Berhasil',
-          message: 'Layout berhasil dihapus'
-        });
+        setToast({ type: 'success', title: 'Berhasil', message: 'Layout berhasil dihapus' });
       } else {
-        setToast({
-          type: 'error',
-          title: 'Gagal', 
-          message: 'Gagal Menghapus Layout'
-        });
+        setToast({ type: 'error', title: 'Gagal', message: 'Gagal Menghapus Layout' });
       }
     } catch (error) {
-      setToast({
-        type: 'error',
-        title: 'Gagal',
-        message: 'Terjadi kesalahan sistem saat menghapus data.'
-      });
+      setToast({ type: 'error', title: 'Gagal', message: 'Terjadi kesalahan sistem saat menghapus data.' });
     }
   };
 
@@ -85,8 +112,6 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
       setToast({ type: 'error', title: 'Error', message: "Anda harus login untuk mengedit data" });
       return;
     }
-    
-    // Jika sudah login, pindahkan halaman lewat router
     router.push(`/layout/edit/${id}`);
   };
 
@@ -142,13 +167,8 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
               <TableSpinnerLoader colSpan={5} />
             ) : filteredLayouts.length > 0 ? (
               filteredLayouts.map((item) => {
-                // 1. Batasi karakter nama maksimal 30 karakter
                 const namaLayout = item.name.length > 30 ? `${item.name.slice(0, 30)}...` : item.name;
-
-                // 2. Hitung jumlah konten di dalam JSON config
                 const jumlahKontenJson = Object.keys((item.config as object) || {}).length;
-
-                // 3. Format tanggal createdAt
                 const tanggalBuat = new Date(item.createdAt).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "short",
@@ -157,22 +177,13 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/20 transition-colors">
-                    
-                    {/* Kolom NAMA */}
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-slate-800 dark:text-zinc-100" title={item.name}>
                             {namaLayout}
                           </p>
-                          {/* Badge penanda jika layout ini adalah default */}
-                          {/* {item.isDefault && (
-                            <span className="bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 text-[9px] font-extrabold px-1.5 py-0.5 rounded">
-                              DEFAULT
-                            </span>
-                          )} */}
                         </div>
-                        {/* Metadata responsif yang muncul hanya di layar HP */}
                         <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-normal md:hidden mt-0.5 flex items-center gap-2">
                           <span>{jumlahKontenJson} Elemen</span>
                           <span>•</span>
@@ -181,7 +192,6 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
                       </div>
                     </td>
 
-                    {/* Kolom STRUKTUR (Desktop Only) */}
                     <td className="py-3.5 px-4 hidden md:table-cell">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
                         <FiDatabase className="w-3 h-3" />
@@ -189,7 +199,6 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
                       </span>
                     </td>
 
-                    {/* Kolom TANGGAL (Desktop Only) */}
                     <td className="py-3.5 px-4 text-xs font-normal text-slate-400 dark:text-zinc-500 hidden md:table-cell">
                       <span className="flex items-center gap-1.5">
                         <FiCalendar className="w-3.5 h-3.5" />
@@ -197,13 +206,12 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
                       </span>
                     </td>
 
-                    {/* Kolom ACTION (Preview, Edit, Hapus) */}
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-1.5 md:gap-2">
                         
-                        {/* Tombol Preview */}
+                        {/* Tombol Preview Berubah ke handlePreview(item) */}
                         <button
-                          onClick={() => alert("Fitur preview belum tersedia.")}
+                          onClick={() => handlePreview(item)}
                           className="cursor-pointer bg-slate-100 hover:bg-emerald-50 dark:bg-zinc-800/80 dark:hover:bg-emerald-950/40 text-slate-600 hover:text-emerald-600 dark:text-zinc-400 dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
                           title="Preview Layout"
                         >
@@ -211,7 +219,6 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
                           <span>Preview</span>
                         </button>
 
-                        {/* Tombol Edit */}
                         <button 
                           onClick={() => handleEdit(item.id)}
                           className="cursor-pointer bg-slate-100 hover:bg-blue-50 dark:bg-zinc-800/80 dark:hover:bg-blue-950/40 text-slate-600 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
@@ -220,7 +227,6 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
                           <span>Edit</span>
                         </button>
 
-                        {/* Tombol Hapus */}
                         <button
                           onClick={() => handleDelete(item.id)}
                           className="bg-slate-100 cursor-pointer hover:bg-rose-50 dark:bg-zinc-800/80 dark:hover:bg-rose-950/40 text-slate-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
@@ -236,7 +242,6 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
                 );
               })
             ) : (
-              // Tampilan saat hasil pencarian atau data dari database kosong
               <tr>
                 <td colSpan={4} className="py-12 text-center text-slate-400 dark:text-zinc-500">
                   <FiDatabase className="w-10 h-10 mx-auto text-slate-300 dark:text-zinc-700 mb-2" />
@@ -247,6 +252,18 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
           </tbody>
         </table>
       </div>
+
+      {/* --- KOMPONEN MODAL PREVIEW YANG TERINTERGASI DATA DINAMIS --- */}
+      <PreviewPage
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        formData={strukData} 
+        setFormData={setStrukData}
+        isGenerating={isGenerating}
+        config={selectedConfig} 
+        setIsGenerating={setIsGenerating}
+        settings={settingsData}
+      />
 
       {toast && (
           <div>

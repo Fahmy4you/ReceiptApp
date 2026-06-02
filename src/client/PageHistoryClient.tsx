@@ -3,7 +3,7 @@
 import { TableSpinnerLoader } from "@/components/Loading";
 import PreviewPage from "@/components/PreviewPage";
 import Toast from "@/components/Toast";
-import { DefaultConfigLayout, exampleHistoryData } from "@/lib/constanta";
+import { DefaultConfigLayout, DefaultEwalletLayout, exampleHistoryData } from "@/lib/constanta";
 import { ReceiptWithLayout, SettingsData } from "@/lib/types";
 import { deleteReceipt, getAllReceipts } from "@/models/Receipt";
 import { useSession } from "next-auth/react";
@@ -29,9 +29,9 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
         if(session.status == "authenticated") {
           const data = await getAllReceipts();
           setDataList(data);
+        } else {
+          setDataList(exampleHistoryData as any)
         }
-
-        setDataList(exampleHistoryData as any)
       } catch (error) {
         console.error("Gagal mengambil data struk:", error);
       } finally {
@@ -43,17 +43,17 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
   }, [session.status]);
 
   const handleRePrint = (item: ReceiptWithLayout) => {
-    // 1. Ambil data konten dari receipt (formData)
-    setStrukData(item.content); // Asumsi item.content adalah JSON object
-
-    // 2. Tentukan Config: Jika ada layout ambil config-nya, jika tidak pakai Default
+    setStrukData(item.content);
     if (item.layout && item.layout.config) {
       setConfig(item.layout.config);
     } else {
-      setConfig(DefaultConfigLayout);
+      if(item.layoutId == "DEFAULT_EWALLET_LAYOUT") {
+        setConfig(DefaultEwalletLayout);
+      } else {
+        setConfig(DefaultConfigLayout);
+      }
     }
 
-    // 3. Buka Modal
     setShowModal(true);
   };
 
@@ -258,7 +258,7 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
             setIsGenerating={setIsGenerating}
             settings={settingsData as SettingsData | null}
           />
-        )}
+      )}
     </div>
   );
 }

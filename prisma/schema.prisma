@@ -59,6 +59,8 @@ model User {
   name              String?
   email             String?       @unique
   whatsappNumber    String?       @unique
+  image             String?
+  emailVerified     DateTime?     @map("email_verified")
   password          String? 
   kuota             Int           @default(10)
   license           StatusLisensi @default(FREE_TIER)
@@ -74,7 +76,7 @@ model User {
 
   role RolesUser @relation(fields: [roleId], references: [id], onDelete: Cascade)
  
-  @@map("users")
+  @@map("user")
 }
 
 model VerificationToken {
