@@ -23,6 +23,7 @@ import SearchableSelect from '@/components/Inputs/SearchableSelect';
 import { Checkbox } from '@/components/Inputs/CheckBox';
 import PreviewPage from '@/components/PreviewPage';
 import { createReceipt } from '@/models/Receipt';
+import { useSession } from 'next-auth/react';
 const getIcon = (label: string) => {
   const l = label.toUpperCase();
   if (l.includes('NAMA')) return <User size={14} className="text-blue-500" />;
@@ -49,6 +50,7 @@ export default function PageManualStrukClient({ settings, layoutData }: { settin
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+  const session = useSession();
   
   // --- STATE CONFIG LAYOUT ---
   const [config, setConfig] = useState<ReceiptElement[]>(DefaultConfigLayout);
@@ -136,6 +138,15 @@ export default function PageManualStrukClient({ settings, layoutData }: { settin
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if(session.status !== "authenticated") {
+        setToast({
+            type: 'error',
+            title: 'Gagal',
+            message: 'Anda harus login untuk menggunakan fitur ini.'
+        });
+        return;
+    }
+
     const findNameValue = () => {
         const priorityLabels = ['penerima', 'nama'];
         for (const target of priorityLabels) {
@@ -190,7 +201,7 @@ export default function PageManualStrukClient({ settings, layoutData }: { settin
         layoutId: configId == "default_system" ? null : configId, // Jika bawaan sistem, kirim null / sesuaikan skema DB
         total: finalTotal,
         content: formData,
-        type: "manual"
+        type: "RECEIPT_MANUAL"
     });
 
     if(saveInHistory.success) {

@@ -65,7 +65,7 @@ export default function LoadingScreenSkeleton() {
       </div>
 
       {/* Loading Overlay (Optional subtle text) */}
-      <div className="fixed bottom-8 right-8 flex items-center gap-3 px-4 py-2 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 shadow-lg">
+      <div className="fixed top-8 right-8 flex items-center gap-3 px-4 py-2 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 shadow-lg">
         <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Menyiapkan Dashboard...</span>
       </div>

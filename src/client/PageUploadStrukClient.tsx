@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, ChangeEvent, useMemo, useRef } from 'react';
+import { useState, useEffect, ChangeEvent, useMemo } from 'react';
 import { 
   LuUpload as Upload,
   LuLoader as Loader2,
@@ -14,6 +14,7 @@ import { calculateReceiptTotal, normalizeKey } from '@/lib/Helpers';
 import Toast from '@/components/Toast';
 import PreviewPage from '@/components/PreviewPage';
 import { createReceipt } from '@/models/Receipt';
+import { useSession } from 'next-auth/react';
 
 interface Previews {
   struk_image: string | null;
@@ -41,6 +42,7 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
     const [strukData, setStrukData] = useState<Record<string, any>>({
         showAdmin: true,
     });
+    const session = useSession();
 
     // --- MEMOIZE OPTIONS UNTUK SEARCHABLE SELECT ---
     const layoutOptions = useMemo(() => {
@@ -129,6 +131,15 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
                 type: 'error',
                 title: 'Gagal',
                 message: 'Mohon unggah gambar struk terlebih dahulu.'
+            });
+            return;
+        }
+
+        if(session.status !== "authenticated") {
+            setToast({
+                type: 'error',
+                title: 'Gagal',
+                message: 'Anda harus login untuk menggunakan fitur ini.'
             });
             return;
         }
@@ -237,7 +248,7 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
                 layoutId: configId === "default_system" ? null : configId,
                 total: finalTotal,
                 content: updatedStrukData,
-                type: "upload"
+                type: "RECEIPT_UPLOAD"
             });
 
             if(saveInHistory.success) {

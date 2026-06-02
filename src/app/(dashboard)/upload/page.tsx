@@ -1,14 +1,23 @@
 import PageUploadStrukClient from "@/client/PageUploadStrukClient";
 import LoadingScreenSkeleton from "@/components/Loading";
+import { auth } from "@/lib/auth";
+import { exampleLayoutData } from "@/lib/constanta";
 import { SettingsData } from "@/lib/types";
 import { getAllLayouts } from "@/models/Layout";
 import { getSettingByUserId } from "@/models/Settings";
+import { Layout } from "@prisma/client";
 import { Suspense } from "react";
 
 export default async function App() {
   
-  const layoutData = await getAllLayouts()
-  const settings = await getSettingByUserId();
+  const session = await auth();
+  
+  let settings = undefined
+  let layoutData: Layout[] = exampleLayoutData as any; 
+  if(session) {
+    layoutData = await getAllLayouts(); 
+    settings = await getSettingByUserId();
+  }
   const settingsData = settings ? settings.data : null;
 
   return (
