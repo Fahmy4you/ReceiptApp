@@ -2,28 +2,36 @@
 
 import { TableSpinnerLoader } from "@/components/Loading";
 import PreviewPage from "@/components/PreviewPage";
-import { DefaultConfigLayout } from "@/lib/constanta";
+import Toast from "@/components/Toast";
+import { DefaultConfigLayout, exampleHistoryData } from "@/lib/constanta";
 import { ReceiptWithLayout, SettingsData } from "@/lib/types";
-import { getAllReceipts } from "@/models/Receipt";
+import { deleteReceipt, getAllReceipts } from "@/models/Receipt";
+import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { FiCalendar, FiDatabase, FiPlus, FiSearch, FiTrash2, FiGrid, FiPrinter } from "react-icons/fi";
 
 export default function PageHistoryClient({settingsData}: {settingsData: SettingsData | null}) {
   const [dataList, setDataList] = useState<Awaited<ReturnType<typeof getAllReceipts>>>([]);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [strukData, setStrukData] = useState<any>(null);
   const [config, setConfig] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const session = useSession();
 
   // Mengambil data dari database saat komponen dimuat
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await getAllReceipts();
-        setDataList(data);
+        if(session.status == "authenticated") {
+          const data = await getAllReceipts();
+          setDataList(data);
+        }
+
+        setDataList(exampleHistoryData as any)
       } catch (error) {
         console.error("Gagal mengambil data struk:", error);
       } finally {
@@ -32,7 +40,7 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
     };
 
     fetchData();
-  }, []);
+  }, [session.status]);
 
   const handleRePrint = (item: ReceiptWithLayout) => {
     // 1. Ambil data konten dari receipt (formData)
@@ -53,6 +61,40 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
   const filteredData = dataList.filter((item) =>
     item.nama.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus riwayat ini?")) return;
+
+    if(session.status != 'authenticated') {
+      setToast({ type: 'error', title: 'Error', message: "Anda harus login untuk menghapus data" });
+      return;
+    }
+
+    try {
+      const result = await deleteReceipt(id);
+      if (result.success) {
+        // Update state secara lokal agar UI langsung berubah
+        setDataList((prev) => prev.filter((item) => item.id !== id));
+        setToast({
+          type: 'success',
+          title: 'Berhasil',
+          message: 'History berhasil dihapus'
+        });
+      } else {
+        setToast({
+          type: 'error',
+          title: 'Gagal', 
+          message: 'Gagal Menghapus History'
+        });
+      }
+    } catch (error) {
+      setToast({
+        type: 'error',
+        title: 'Gagal',
+        message: 'Terjadi kesalahan sistem saat menghapus data.'
+      });
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-3xl p-5 md:p-6 shadow-sm transition-colors duration-300">
@@ -101,7 +143,7 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
             ) : filteredData.length > 0 ? (
               filteredData.map((item) => {
                 // 1. Ambil nama layout dan batasi maksimal 10 karakter
-                const rawLayoutName = item.layout?.name || "Tanpa Layout";
+                const rawLayoutName = item.layout?.name || "Default Layout";
                 const namaLayout = rawLayoutName.length > 10 
                   ? `${rawLayoutName.slice(0, 10)}...` 
                   : rawLayoutName;
@@ -173,12 +215,7 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
 
                         {/* Tombol Hapus */}
                         <button
-                          onClick={() => {
-                            if (confirm("Apakah Anda yakin ingin menghapus catatan riwayat struk ini?")) {
-                              // Masukkan fungsi server action delete di sini
-                              console.log("Hapus struk ID:", item.id);
-                            }
-                          }}
+                          onClick={() => handleDelete(item.id)}
                           className="bg-slate-100 cursor-pointer hover:bg-rose-50 dark:bg-zinc-800/80 dark:hover:bg-rose-950/40 text-slate-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 px-3 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
                           title="Hapus Data"
                         >
@@ -203,6 +240,12 @@ export default function PageHistoryClient({settingsData}: {settingsData: Setting
           </tbody>
         </table>
       </div>
+
+      {toast && (
+          <div>
+              <Toast toast={toast} setToast={setToast} />
+          </div>
+      )}
 
       {showModal && (
           <PreviewPage

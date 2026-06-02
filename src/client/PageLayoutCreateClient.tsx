@@ -3,6 +3,7 @@ import Toast from '@/components/Toast';
 import { DefaultConfigLayout, fontConfig, weightConstanta } from '@/lib/constanta';
 import { DataType, ElementType, InputTextElement, LabelLayout, ReceiptElement, SeparatorElement, TextElement } from '@/lib/types';
 import { createLayout, updateLayout } from '@/models/Layout';
+import { useSession } from 'next-auth/react';
 import { useRef, useState } from 'react';
 import { 
   LuTrash2 as Trash2, 
@@ -52,6 +53,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
   const [loading, setLoading] = useState(false);
   const errorRef = useRef<HTMLDivElement | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+  const session = useSession();
 
   const addElement = (type: ElementType) => {
     const id = crypto.randomUUID();
@@ -115,6 +117,12 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
 
   const handleSaveLayout = async () => {
     setLoading(true);
+    if(session.status != 'authenticated') {
+      setToast({ type: 'error', title: 'Error', message: "Anda harus login untuk menyimpan layout" });
+      setLoading(false);
+      return;
+    }
+
     try {
       let result;
       if(idLayout) {

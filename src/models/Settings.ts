@@ -1,112 +1,161 @@
 "use server"
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
+import { ROLES } from "@/lib/constanta";
 import { deleteFile } from "@/lib/file";
-import { getDeviceIdentifier } from "@/lib/getDeviceIdentifier"; // Import helper global kamu
+import { auth } from "@/lib/auth";
 
-/**
- * Mendapatkan Pengaturan (Settings) khusus untuk perangkat saat ini
- */
-export const getSettingByUserId = async () => {
+export const getAllSettings = async (filters?: {
+  sortBy?: keyof Prisma.SettingsOrderByWithRelationInput;
+  order?: "asc" | "desc";
+}) => {
+  const session = await auth();
+  if (!session) throw new Error("Unauthenticated");
+
+  // 1. Proteksi: Hanya Admin yang boleh list semua settings
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  if (!isAdmin) {
+    throw new Error("Forbidden: Anda tidak memiliki akses untuk melihat semua pengaturan.");
+  }
+
   try {
-    const deviceId = await getDeviceIdentifier();
+    const allSettings = await prisma.settings.findMany({
+      orderBy: {
+        [filters?.sortBy || "createdAt"]: filters?.order || "desc",
+      },
+      // Opsional: Sertakan info user agar admin tahu ini settings milik siapa
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+    return allSettings;
+  } catch (error) {
+    console.error("Error fetching all settings:", error);
+    return [];
+  }
+};
 
+export const getSettingByUserId = async (targetUserId?: string) => {
+  const session = await auth();
+  if (!session) throw new Error("Unauthenticated");
+
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  // Jika bukan admin, paksa ambil ID diri sendiri
+  const finalUserId = isAdmin && targetUserId ? targetUserId : session.user.id;
+
+  try {
     const settings = await prisma.settings.findFirst({
-      where: { userId: deviceId },
+      where: { userId: finalUserId },
     });
     
     return settings;
-  } catch (error: any) {
-    console.error("Error fetching settings:", error.message);
+  } catch (error) {
+    console.error("Error fetching settings:", error);
     return null;
   }
 };
 
-/**
- * Update atau Create (Upsert) Pengaturan Standar Perangkat
- */
-export const upsertSettings = async (data: {
-  data: any; // Field 'data' di model Prisma bertipe Json
-}) => {
-  try {
-    const deviceId = await getDeviceIdentifier();
 
-    // Cari dulu apakah perangkat ini sudah pernah menyimpan pengaturan
+export const upsertSettings = async (data: {
+  userId?: string;
+  data: any; // Ini field 'data' di model yang bertipe Json
+}) => {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthenticated");
+
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  const finalUserId = isAdmin && data.userId ? data.userId : session.user.id;
+
+  try {
+    // Cari dulu apakah sudah ada
     const existingSettings = await prisma.settings.findFirst({
-      where: { userId: deviceId }
+      where: { userId: finalUserId }
     });
 
     if (existingSettings) {
-      // Jika ada, lakukan update
+      // Jika ada, update
       const updated = await prisma.settings.update({
         where: { id: existingSettings.id },
         data: { data: data.data },
       });
       return { success: true, action: "update", data: updated };
     } else {
-      // Jika belum ada, buat baru khusus untuk perangkat ini
+      // Jika belum ada, create
       const created = await prisma.settings.create({
         data: {
-          userId: deviceId,
+          userId: finalUserId,
           data: data.data,
         },
       });
       return { success: true, action: "create", data: created };
     }
-  } catch (error: any) {
-    console.error("Error upserting settings:", error.message);
+  } catch (error) {
+    console.error("Error upserting settings:", error);
     return { success: false, error: "Gagal menyimpan pengaturan" };
   }
 };
 
-/**
- * Menghapus Pengaturan Perangkat
- */
+
 export const deleteSettings = async (id: string) => {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthenticated");
+
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+
+  const existingSettings = await prisma.settings.findUnique({
+    where: { id }
+  });
+
+  if (!existingSettings) throw new Error("Settings tidak ditemukan");
+
+  // Proteksi kepemilikan
+  if (!isAdmin && existingSettings.userId !== session.user.id) {
+    throw new Error("Forbidden: Akses ditolak");
+  }
+
   try {
-    const deviceId = await getDeviceIdentifier();
-
-    const existingSettings = await prisma.settings.findUnique({
-      where: { id }
-    });
-
-    if (!existingSettings) throw new Error("Settings tidak ditemukan");
-
-    // Proteksi kepemilikan: Hanya perangkat yang bersangkutan yang boleh menghapusnya
-    if (existingSettings.userId !== deviceId) {
-      throw new Error("Forbidden: Akses ditolak");
-    }
-
     await prisma.settings.delete({
       where: { id },
     });
     return { success: true, message: "Pengaturan berhasil dihapus" };
-  } catch (error: any) {
-    console.error("Error deleting settings:", error.message);
-    return { success: false, error: error.message || "Gagal menghapus pengaturan" };
+  } catch (error) {
+    console.error("Error deleting settings:", error);
+    return { success: false, error: "Gagal menghapus pengaturan" };
   }
 };
 
-/**
- * Update atau Create Pengaturan dengan fitur otomatis hapus file gambar Logo lama (Anti-Sampah)
- */
 export const upsertSettingsAction = async (data: {
+  userId?: string;
   data: any; 
 }) => {
-  try {
-    const deviceId = await getDeviceIdentifier();
-    let fileToDelete: string | null = null;
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthenticated");
 
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  const finalUserId = isAdmin && data.userId ? data.userId : session.user.id;
+
+  // Variabel untuk menampung path file yang akan dihapus nanti
+  let fileToDelete: string | null = null;
+
+  try {
     const existingSettings = await prisma.settings.findFirst({
-      where: { userId: deviceId }
+      where: { userId: finalUserId }
     });
 
     if (existingSettings) {
       const oldData = existingSettings.data as any;
       const newData = data.data;
 
-      // 1. Cek apakah ada file logo lama yang perlu dibersihkan dari server
-      if (oldData?.logo && newData?.logo && oldData.logo != newData.logo) {
+      // 1. Tentukan apakah ada file yang perlu dihapus
+      if (oldData?.logo && newData?.logo && oldData.logo != newData.logo && oldData.logo) {
         if (oldData.logo.startsWith("/image/upload/")) {
+          // Kita simpan path-nya saja, JANGAN dihapus dulu
           fileToDelete = oldData.logo;
         }
       }
@@ -117,21 +166,21 @@ export const upsertSettingsAction = async (data: {
         data: { data: data.data },
       });
 
-      // 3. JIKA database sukses aman terupdate, baru hapus file fisiknya
+      // 3. JIKA database sukses, baru hapus file fisiknya
       if (fileToDelete) {
         await deleteFile(fileToDelete);
       }
 
       return { success: true, data: updated };
     } else {
-      // Logika create awal jika data belum ada sama sekali
+      // Logika create (tidak ada yang perlu dihapus karena data baru)
       const created = await prisma.settings.create({
-        data: { userId: deviceId, data: data.data },
+        data: { userId: finalUserId, data: data.data },
       });
       return { success: true, data: created };
     }
-  } catch (error: any) {
-    console.error("Gagal simpan settings via action:", error.message);
+  } catch (error) {
+    console.error("Gagal simpan settings:", error);
     return { success: false, error: "Gagal menyimpan ke database" };
   }
 };

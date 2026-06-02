@@ -1,7 +1,9 @@
 'use client';
 import Toast from '@/components/Toast';
 import { usePrinter } from '@/context/PrinterContext';
-import { AdminRange, SettingsData, ThemeType } from '@/lib/types';
+import { useTheme } from '@/context/ThemeContext';
+import { AdminRange, SettingsData } from '@/lib/types';
+import { useSession } from 'next-auth/react';
 import { useEffect, useRef, useState } from 'react';
 import { FiAlertCircle } from 'react-icons/fi';
 import { 
@@ -34,6 +36,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
   const [showModal, setShowModal] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
   const errorRef = useRef<HTMLDivElement | null>(null);
+  const session = useSession();
   
   // Data State
   const [shopName, setShopName] = useState(initialData?.shopName || 'StrukApp Digital');
@@ -58,6 +61,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
   // Context Printer State
   const [isSearching, setIsSearching] = useState(false);
   const { printerDevice, setPrinterDevice, isPrinterConnected, setIsPrinterConnected } = usePrinter();
+  const {theme, setTheme} = useTheme();
 
   // --- LOGIKA AUTO RECONNECT SETELAH REFRESH ---
   useEffect(() => {
@@ -179,6 +183,11 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
   const handleSave = async () => {
     setLoading(true);
     let finalLogoPath = logoPreview;
+    if(session.status != 'authenticated') {
+      setToast({ type: 'error', title: 'Error', message: "Anda harus login untuk menyimpan pengaturan" });
+      setLoading(false);
+      return;
+    }
 
     try {
       if (logoPreview && logoPreview.startsWith("data:")) {
@@ -238,54 +247,6 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
     } finally {
       setLoading(false);
     }
-  };
-
-  const [theme, setTheme] = useState<ThemeType>('dark');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
-
-  // ==========================================
-  // EFEK TRANSAKSI TEMA (data-theme)
-  // ==========================================
-  useEffect(() => {
-    // Ambil tema yang tersimpan di lokal atau default ke 'system'
-    const savedTheme = (localStorage.getItem('theme') as ThemeType) || 'system';
-    setTheme(savedTheme);
-    applyTheme(savedTheme);
-  }, []);
-
-  // Memantau perubahan preferensi sistem jika memilih mode 'system'
-  useEffect(() => {
-    if (theme !== 'system') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      applyTheme('system');
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
-  const applyTheme = (targetTheme: ThemeType) => {
-    const root = document.documentElement;
-    let finalTheme: 'light' | 'dark' = 'dark';
-
-    if (targetTheme === 'system') {
-      const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      finalTheme = systemIsDark ? 'dark' : 'light';
-    } else {
-      finalTheme = targetTheme;
-    }
-
-    // Terapkan atribut data-theme
-    root.setAttribute('data-theme', finalTheme);
-    setResolvedTheme(finalTheme);
-  };
-
-  const handleThemeChange = (newTheme: ThemeType) => {
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    applyTheme(newTheme);
   };
 
   return (
@@ -609,7 +570,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
 
             {/* Opsi 1: Light */}
             <button
-              onClick={() => handleThemeChange('light')}
+              onClick={() => setTheme('light')}
               className={`relative cursor-pointer z-10 w-[32%] py-2.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-colors ${
                 theme === 'light' 
                   ? 'text-blue-600 dark:text-blue-400 font-extrabold' 
@@ -622,7 +583,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
 
             {/* Opsi 2: Dark */}
             <button
-              onClick={() => handleThemeChange('dark')}
+              onClick={() => setTheme('dark')}
               className={`relative cursor-pointer z-10 w-[32%] py-2.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-colors ${
                 theme === 'dark' 
                   ? 'text-blue-600 dark:text-blue-400 font-extrabold' 
@@ -635,7 +596,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
 
             {/* Opsi 3: System */}
             <button
-              onClick={() => handleThemeChange('system')}
+              onClick={() => setTheme('system')}
               className={`relative cursor-pointer z-10 w-[32%] py-2.5 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-colors ${
                 theme === 'system' 
                   ? 'text-blue-600 dark:text-blue-400 font-extrabold' 

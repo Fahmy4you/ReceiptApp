@@ -1,46 +1,47 @@
-"use server";
+"use server"
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
-import { getDeviceIdentifier } from "@/lib/getDeviceIdentifier"; // Import helper global kamu
-import { TypeReceipt } from "@/lib/types";
+import { redirect } from "next/navigation";
+import { Prisma, TypeReceipt } from "@prisma/client";
+import { ROLES } from "@/lib/constanta";
+import { getUserById } from "./User";
+import { auth } from "@/lib/auth";
 
-/**
- * Mendapatkan semua riwayat transaksi struk milik perangkat saat ini
- */
 export const getAllReceipts = async (filters?: {
+  userId?: string;
   startDateCreatedAt?: Date;
   endDateCreatedAt?: Date;
   startDateUpdatedAt?: Date;
   endDateUpdatedAt?: Date;
-  sortBy?: keyof Prisma.ReceiptOrderByWithRelationInput;
+  sortBy?: keyof Prisma.ReceiptOrderByRelationAggregateInput;
   order?: "asc" | "desc";
-  limit?: number; 
-  page?: number; 
+  limit?: number; // Tambahkan parameter limit opsional di sini
 }) => {
+  const session = await auth();
+  if (!session) throw new Error("Unauthenticated");
+
+  // 1. Cek apakah user adalah Admin
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+
   try {
-    const deviceId = await getDeviceIdentifier();
-
-    // Hitung skip kalau misal pakai pagination (default page = 1)
-    const limit = filters?.limit;
-    const page = filters?.page || 1;
-    const skip = limit ? (page - 1) * limit : undefined;
-
     const receipts = await prisma.receipt.findMany({
       where: {
-        // Hanya ambil data struk milik browser perangkat saat ini
-        userId: deviceId,
+        // Jika Admin: gunakan userId dari parameter (kalau ada), kalau tidak ada ambil semua.
+        // Jika User: abaikan parameter userId dan paksa gunakan ID miliknya sendiri.
+        userId: isAdmin 
+          ? (filters?.userId || undefined) 
+          : session.user.id,
         
         ...(filters?.startDateCreatedAt && filters?.endDateCreatedAt && {
           createdAt: {
-            gte: filters.startDateCreatedAt,
-            lte: filters.endDateCreatedAt,
+            gte: filters.startDateCreatedAt, 
+            lte: filters.endDateCreatedAt,   
           },
         }),
 
         ...(filters?.startDateUpdatedAt && filters?.endDateUpdatedAt && {
           updatedAt: {
-            gte: filters.startDateUpdatedAt,
-            lte: filters.endDateUpdatedAt,
+            gte: filters.startDateUpdatedAt, 
+            lte: filters.endDateUpdatedAt,   
           },
         }),
       },
@@ -48,27 +49,28 @@ export const getAllReceipts = async (filters?: {
         layout: true
       },
       orderBy: {
+        // Jika sortBy ada, gunakan itu. Jika tidak, default ke createdAt
         [filters?.sortBy || "createdAt"]: filters?.order || "desc",
       },
-      // Pasang limit (take) dan offset (skip) di sini
-      ...(limit && { take: limit }),
-      ...(skip !== undefined && { skip: skip }),
+      // PERUBAHAN DI SINI: Gunakan properti take untuk membatasi jumlah data
+      take: filters?.limit || undefined, 
     });
 
     return receipts;
-  } catch (error: any) {
-    console.error("Error fetching receipts :", error.message);
+  } catch (error) {
+    console.error("Error fetching receipts :", error);
     return [];
   }
 };
 
-/**
- * Mendapatkan data satu struk spesifik berdasarkan ID
- */
 export const getReceiptById = async (id: string) => {
-  try {
-    const deviceId = await getDeviceIdentifier();
+  const session = await auth();
+  if (!session) throw new Error("Unauthenticated");
 
+  // 1. Cek apakah user adalah Admin
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+
+  try {
     const receipt = await prisma.receipt.findUnique({
       where: { id },
       include: {
@@ -78,9 +80,9 @@ export const getReceiptById = async (id: string) => {
 
     if (!receipt) return null;
 
-    // Proteksi: Mencegah perangkat lain mengintip data struk dengan cara ganti ID di parameter
-    if (receipt.userId !== deviceId) {
-      return null; 
+    // Jika bukan admin dan bukan pemiliknya, blokir akses
+    if (!isAdmin && receipt.userId !== session.user.id) {
+        return null; 
     }
 
     return receipt;
@@ -90,98 +92,126 @@ export const getReceiptById = async (id: string) => {
   }
 };
 
-/**
- * Menyimpan data riwayat struk baru ke database
- */
 export const createReceipt = async (data: {
   nama: string;
   layoutId: string | null;
   total: number | null;
+  userId?: string;
   content: any;
   type: TypeReceipt
 }) => {
-  try {
-    const deviceId = await getDeviceIdentifier();
+  const session = await auth();
+  
+  // 1. Validasi awal: Jika tidak ada session atau ID, stop di sini.
+  if (!session?.user?.id) {
+    throw new Error("Unauthenticated");
+  }
 
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  let userIdCheck: string;
+
+  if(isAdmin && data.userId != undefined) {
+    userIdCheck = data.userId;
+  } else {
+    userIdCheck = session.user.id;
+  }
+
+  const user = await getUserById(userIdCheck);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  try {
     const newReceipt = await prisma.receipt.create({
       data: {
         nama: data.nama,
         layoutId: data.layoutId,
         total: data.total,
-        userId: deviceId, // Diikat ke ID unik sidik jari perangkat saat ini
+        userId: userIdCheck,
         content: data.content,
         type: data.type
       },
     });
 
     return { success: true, data: newReceipt };
-  } catch (error: any) {
-    console.error("Error creating receipt:", error.message);
-    return { success: false, error: "Gagal menyimpan data struk" };
+  } catch (error) {
+    console.error("Error creating receipt:", error);
+    return { success: false, error: "Gagal menyimpan data" };
   }
 };
 
-/**
- * Memperbarui isi konten data struk yang sudah tersimpan
- */
 export const updateReceipt = async (id: string, data: {
+  userId?: string;
   content: any;
 }) => {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthenticated");
+
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+
+  // 1. Cari data lama untuk cek kepemilikan
+  const existingReceipt = await prisma.receipt.findUnique({
+    where: { id }
+  });
+
+  if (!existingReceipt) throw new Error("Receipt not found");
+
+  // 2. Security Check: Jika bukan admin, pastikan dia pemiliknya
+  if (!isAdmin && existingReceipt.userId !== session.user.id) {
+    throw new Error("Forbidden: Anda tidak memiliki akses ke data ini");
+  }
+
+  // 3. Tentukan userId baru (jika admin ingin mengubah owner)
+  let targetUserId = existingReceipt.userId;
+  if (isAdmin && data.userId) {
+    const userExists = await getUserById(data.userId);
+    if (!userExists) throw new Error("Target user not found");
+    targetUserId = data.userId;
+  }
+
   try {
-    const deviceId = await getDeviceIdentifier();
-
-    // 1. Cari data lama untuk validasi kepemilikan
-    const existingReceipt = await prisma.receipt.findUnique({
-      where: { id }
-    });
-
-    if (!existingReceipt) throw new Error("Data struk tidak ditemukan");
-
-    // 2. Security Check: Hanya perangkat yang membuat struk ini yang boleh mengubahnya
-    if (existingReceipt.userId !== deviceId) {
-      throw new Error("Forbidden: Anda tidak memiliki akses ke data ini");
-    }
-
     const updated = await prisma.receipt.update({
       where: { id },
       data: {
+        userId: targetUserId,
         content: data.content,
       },
     });
 
     return { success: true, data: updated };
-  } catch (error: any) {
-    console.error("Error updating receipt:", error.message);
-    return { success: false, error: error.message || "Gagal memperbarui data" };
+  } catch (error) {
+    console.error("Error updating receipt:", error);
+    return { success: false, error: "Gagal memperbarui data" };
   }
 };
 
-/**
- * Menghapus data riwayat struk dari database
- */
 export const deleteReceipt = async (id: string) => {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthenticated");
+
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+
+  // 1. Cari data untuk cek validitas & kepemilikan
+  const existingReceipt = await prisma.receipt.findUnique({
+    where: { id }
+  });
+
+  if (!existingReceipt) throw new Error("Receipt not found");
+
+  // 2. Security Check: Bukan admin & bukan pemilik? Blokir.
+  if (!isAdmin && existingReceipt.userId !== session.user.id) {
+    throw new Error("Forbidden: Anda tidak diizinkan menghapus data ini");
+  }
+
   try {
-    const deviceId = await getDeviceIdentifier();
-
-    // 1. Cari data lama untuk validasi kepemilikan sebelum dihapus
-    const existingReceipt = await prisma.receipt.findUnique({
-      where: { id }
-    });
-
-    if (!existingReceipt) throw new Error("Data struk tidak ditemukan");
-
-    // 2. Security Check: Hanya perangkat pembuat yang boleh menghapus
-    if (existingReceipt.userId !== deviceId) {
-      throw new Error("Forbidden: Anda tidak diizinkan menghapus data ini");
-    }
-
     await prisma.receipt.delete({
       where: { id },
     });
 
-    return { success: true, message: "Data struk berhasil dihapus" };
-  } catch (error: any) {
-    console.error("Error deleting receipt:", error.message);
-    return { success: false, error: error.message || "Gagal menghapus data" };
+    return { success: true, message: "Data berhasil dihapus" };
+  } catch (error) {
+    console.error("Error deleting receipt:", error);
+    return { success: false, error: "Gagal menghapus data" };
   }
 };

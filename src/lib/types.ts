@@ -27,8 +27,6 @@ export interface SettingsData {
   };
 }
 
-export type ThemeType = 'light' | 'dark' | 'system';
-
 export type ElementType = 'input_text' | 'input_image' | 'text' | 'separator';
 
 export interface ReceiptElement {
@@ -78,7 +76,6 @@ export interface InputTextConfig {
   color: string;
 }
 
-export type TypeReceipt = 'upload' | 'manual';
 export type ReceiptWithLayout = Prisma.ReceiptGetPayload<{
   include: { layout: true }
 }>;
@@ -127,4 +124,11 @@ export interface SeparatorElement extends BaseElement {
   style: 'line' | 'dash' | 'double_line' | 'double_dash';
   color: string;
   thickness?: number; // Fitur Baru Ketebalan
+}
+
+export type ThemeType = 'light' | 'dark' | 'system';
+
+export interface ThemeContextType {
+  theme: ThemeType;
+  setTheme: (theme: ThemeType) => void;
 }

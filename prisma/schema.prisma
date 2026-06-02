@@ -18,6 +18,41 @@ enum StatusLisensi {
   GOLDEN_TIER
   PLATINUM_TIER
 }
+
+enum TypeReceipt {
+  RECEIPT_UPLOAD
+  RECEIPT_MANUAL
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String  @map("user_id")
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+ 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@map("sessions")
+}
  
 model User {
   id                String        @id @default(cuid())
@@ -27,27 +62,49 @@ model User {
   password          String? 
   kuota             Int           @default(10)
   license           StatusLisensi @default(FREE_TIER)
+  roleId            String        @default("cl-user") @map("role_id")
+  accounts          Account[]
+  sessions          Session[]
   receipts          Receipt[]
   layouts           Layout[]
   settings          Settings[]
   lastLogin         DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
+
+  role RolesUser @relation(fields: [roleId], references: [id], onDelete: Cascade)
  
   @@map("users")
 }
 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model RolesUser {
+  id                String    @id @default(cuid())
+  role              String?   @unique
+  users             User[]
+
+  @@map("roles_user")
+}
+
 model Receipt {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   nama      String
   userId    String
   layoutId  String?
-  type      String   // "manual", "upload"
+  type      TypeReceipt
   content   Json
   total     Float?   
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)  
-  layout    Layout?  @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)  
+  layout    Layout?       @relation(fields: [layoutId], references: [id], onDelete: Cascade)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -84,13 +141,13 @@ model Settings {
 }
 
 model UserStatistic {
-  id                String   @id @default(uuid())
+  id                String    @id @default(uuid())
   userId            String
-  date              DateTime
+  date              DateTime  @db.Date
   
-  pdfCount          Int      @default(0)
-  imageCount        Int      @default(0)
-  directPrintCount  Int      @default(0)
+  pdfCount          Int       @default(0)
+  imageCount        Int       @default(0)
+  directPrintCount  Int       @default(0)
 
   @@unique([userId, date])
   @@index([userId, date])

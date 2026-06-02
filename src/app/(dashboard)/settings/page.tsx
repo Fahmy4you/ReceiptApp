@@ -1,13 +1,18 @@
 import PageSettingsClient from "@/client/PageSettingClient";
 import LoadingScreenSkeleton from "@/components/Loading";
+import { auth } from "@/lib/auth";
 import { DEFAULT_SETTINGS_FIRST_LOGIN } from "@/lib/constanta";
 import { SettingsData } from "@/lib/types";
 import { getSettingByUserId } from "@/models/Settings";
 import { Suspense } from "react";
 
 export default async function Page() {
-
-  const settings = await getSettingByUserId()
+  const session = await auth();
+  
+  let settings = undefined
+  if(session) {
+    settings = await getSettingByUserId();
+  }
 
   const initialData = (
     settings?.data 

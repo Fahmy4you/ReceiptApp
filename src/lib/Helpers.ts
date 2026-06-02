@@ -1,4 +1,5 @@
 import { ReceiptElement, SettingsData } from "@/lib/types";
+import { Dispatch, SetStateAction } from "react";
 
 export const getGreeting = () => {
   const hour = new Date().getHours();
@@ -13,6 +14,16 @@ export const getGreeting = () => {
     return "Selamat Malam";
   }
 };
+
+export const copyToClipboard = async (text: string, setCopied: Dispatch<SetStateAction<boolean>>) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Gagal menyalin teks: ', err);
+    }
+  };
 
 export const cleanCurrencyInput = (text: string) => {
   let cleanText = String(text).replace(/Rp/gi, '');

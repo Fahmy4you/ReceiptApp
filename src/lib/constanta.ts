@@ -2,6 +2,11 @@ import { ReceiptElement, SettingsData } from "@/lib/types";
 
 export const DEFAULT_NAME_APP = "StrukApp v1.0"
 
+export const ROLES = [
+  { id: "1", label: "Admin", value: "admin" },
+  { id: "2", label: "User", value: "user" }
+]
+
 export const DEFAULT_SETTINGS_FIRST_LOGIN: SettingsData = {
   "logo": null,
   "alamat": "Jl. Raya No. 123, Kota Jakarta",
@@ -77,6 +82,11 @@ export const STATUS_LISENSI_LABELS: Record<string, string> = {
   SILVER_TIER: "Silver Tier Account",
   GOLDEN_TIER: "Golden Tier Account",
   PLATINUM_TIER: "Platinum Tier Account",
+};
+
+export const RECEIPT_TYPE_LABELS: Record<string, string> = {
+  RECEIPT_UPLOAD: "Struk OCR Mode",
+  RECEIPT_MANUAL: "Struk Manual Mode",
 };
 
 export const DefaultConfigLayout: ReceiptElement[] = [
@@ -1103,4 +1113,95 @@ export const DefaultListrikLayout: ReceiptElement[] = [
     "marginBottom": 40,
     "letterSpacing": 0
   }
+]
+
+export const exampleLayoutData = [
+  {
+    id: "gd9yhinkjiw8huhh9un",
+    name: "Layout E-Wallet Default",
+    userId: null,
+    isDefault: true,
+    config: DefaultConfigLayout as any,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: "gd9yhinkjiw89un",
+    name: "Layout E-Wallet Default",
+    userId: null,
+    isDefault: true,
+    config: DefaultEwalletLayout as any,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: "8989jnHiuhhe",
+    name: "Layout Token Listrik Default",
+    userId: null,
+    isDefault: false,
+    config: DefaultListrikLayout as any,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+]
+
+export const exampleHistoryData = [
+  {
+    id: "cl-history-1",
+    userId: "cl-user-1",
+    content: {
+      "bank": "BRI",
+      "logo": null,
+      "nama": "FAHMY BIMA",
+      "admin": "2500",
+      "total": "445833",
+      "waktu": "17:49",
+      "nominal": "443333",
+      "tanggal": "2026-05-29",
+      "rekening": "90898978",
+      "nama_toko": "StrukApp Digital",
+      "showAdmin": true,
+      "label_baru": "Jl. Raya No. 123, Kota Jakarta",
+      "reference_set": {
+        "type": "limited",
+        "digitLimit": 10
+      },
+      "kode_referensi": "23398987"
+    },
+    layoutId: null,
+    nama: "Fahmy Bima",
+    total: 445833,
+    type: "RECEIPT_MANUAL",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: "cl-history-2",
+    userId: "cl-user-1",
+    content: {
+      "logo": null,
+      "nama": "Ibunya Mimay",
+      "admin": "2500",
+      "total": "102.500",
+      "waktu": "17:45",
+      "no._hp": "null",
+      "nominal": "100.000",
+      "tanggal": "16 Mei 2026",
+      "e-wallet": "GoPay",
+      "nama_toko": "StrukApp Digital",
+      "showAdmin": true,
+      "label_baru": "Jl. Raya No. 123, Kota Jakarta",
+      "reference_set": {
+        "type": "limited",
+        "digitLimit": 10
+      },
+      "kode_referensi": "0516104503"
+    },
+    layoutId: null,
+    nama: "Ibunya Mimay",
+    total: 102500,
+    type: "RECEIPT_UPLOAD",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
 ]

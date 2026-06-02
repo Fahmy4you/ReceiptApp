@@ -1,38 +1,93 @@
 'use client'
 
 import { TableSpinnerLoader } from "@/components/Loading";
-import { getAllLayouts } from "@/models/Layout";
+import Toast from "@/components/Toast";
+import { exampleLayoutData } from "@/lib/constanta";
+import { deleteLayout, getAllLayouts } from "@/models/Layout";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FiCalendar, FiDatabase, FiEdit2, FiPlus, FiSearch, FiTrash2, FiEye } from "react-icons/fi";
 
 export default function LayoutPage() {
   const [layouts, setLayouts] = useState<Awaited<ReturnType<typeof getAllLayouts>>>([]);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const session = useSession();
+  const router = useRouter();
 
   // Ambil data dari database saat komponen pertama kali dimuat
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Memanggil fungsi getAllLayouts (bisa dilempar parameter filter jika butuh)
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // Memanggil fungsi getAllLayouts (bisa dilempar parameter filter jika butuh)
+      if(session.status == "authenticated") {
         const data = await getAllLayouts();
         setLayouts(data);
-      } catch (error) {
-        console.error("Gagal memuat data layout:", error);
-      } finally {
-        setLoading(false);
       }
-    };
 
+      setLayouts(exampleLayoutData as any);
+    } catch (error) {
+      console.error("Gagal memuat data layout:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [session.status]);
 
   // Filter pencarian client-side berdasarkan nama layout
   const filteredLayouts = layouts.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus riwayat ini?")) return;
+
+    if(session.status != 'authenticated') {
+      setToast({ type: 'error', title: 'Error', message: "Anda harus login untuk menghapus data" });
+      return;
+    }
+
+    try {
+      const result = await deleteLayout(id);
+      if (result.success) {
+        // Update state secara lokal agar UI langsung berubah
+        setLayouts((prev) => prev.filter((item) => item.id != id));
+        setToast({
+          type: 'success',
+          title: 'Berhasil',
+          message: 'Layout berhasil dihapus'
+        });
+      } else {
+        setToast({
+          type: 'error',
+          title: 'Gagal', 
+          message: 'Gagal Menghapus Layout'
+        });
+      }
+    } catch (error) {
+      setToast({
+        type: 'error',
+        title: 'Gagal',
+        message: 'Terjadi kesalahan sistem saat menghapus data.'
+      });
+    }
+  };
+
+  const handleEdit = (id: string) => {
+    if (session.status != 'authenticated') {
+      setToast({ type: 'error', title: 'Error', message: "Anda harus login untuk mengedit data" });
+      return;
+    }
+    
+    // Jika sudah login, pindahkan halaman lewat router
+    router.push(`/layout/edit/${id}`);
+  };
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-3xl p-5 md:p-6 shadow-sm transition-colors duration-300">
@@ -146,32 +201,28 @@ export default function LayoutPage() {
                       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-1.5 md:gap-2">
                         
                         {/* Tombol Preview */}
-                        <Link href={`/layout/preview/${item.id}`}
-                          className="bg-slate-100 hover:bg-emerald-50 dark:bg-zinc-800/80 dark:hover:bg-emerald-950/40 text-slate-600 hover:text-emerald-600 dark:text-zinc-400 dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
+                        <button
+                          onClick={() => alert("Fitur preview belum tersedia.")}
+                          className="cursor-pointer bg-slate-100 hover:bg-emerald-50 dark:bg-zinc-800/80 dark:hover:bg-emerald-950/40 text-slate-600 hover:text-emerald-600 dark:text-zinc-400 dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
                           title="Preview Layout"
                         >
                           <FiEye className="w-3.5 h-3.5" />
                           <span>Preview</span>
-                        </Link>
+                        </button>
 
                         {/* Tombol Edit */}
-                        <Link href={`/layout/edit/${item.id}`}
-                          className="bg-slate-100 hover:bg-blue-50 dark:bg-zinc-800/80 dark:hover:bg-blue-950/40 text-slate-600 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
-                          title="Edit Data"
-                        >
+                        <button 
+                          onClick={() => handleEdit(item.id)}
+                          className="cursor-pointer bg-slate-100 hover:bg-blue-50 dark:bg-zinc-800/80 dark:hover:bg-blue-950/40 text-slate-600 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
+                          title="Edit Data">
                           <FiEdit2 className="w-3.5 h-3.5" />
                           <span>Edit</span>
-                        </Link>
+                        </button>
 
                         {/* Tombol Hapus */}
                         <button
-                          onClick={() => {
-                            if(confirm("Apakah Anda yakin ingin menghapus layout ini?")) {
-                              // Taruh fungsi delete kamu di sini
-                              console.log("Hapus id:", item.id);
-                            }
-                          }}
-                          className="bg-slate-100 hover:bg-rose-50 dark:bg-zinc-800/80 dark:hover:bg-rose-950/40 text-slate-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
+                          onClick={() => handleDelete(item.id)}
+                          className="bg-slate-100 cursor-pointer hover:bg-rose-50 dark:bg-zinc-800/80 dark:hover:bg-rose-950/40 text-slate-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 px-2.5 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1"
                           title="Hapus Data"
                         >
                           <FiTrash2 className="w-3.5 h-3.5" />
@@ -195,6 +246,12 @@ export default function LayoutPage() {
           </tbody>
         </table>
       </div>
+
+      {toast && (
+          <div>
+              <Toast toast={toast} setToast={setToast} />
+          </div>
+      )}
     </div>
   );
 }

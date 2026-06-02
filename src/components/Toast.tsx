@@ -26,7 +26,7 @@ const Toast = ({ toast, setToast }: {toast: { type: 'success' | 'error' | 'info'
             <h5 className="font-extrabold text-sm">{toast.title}</h5>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">{toast.message}</p>
         </div>
-        <button onClick={() => setToast(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200">
+        <button onClick={() => setToast(null)} className="text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-zinc-200">
             <FiX className="w-4 h-4" />
         </button>
     </div>

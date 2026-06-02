@@ -1,57 +1,51 @@
 "use server"
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getDeviceIdentifier } from "@/lib/getDeviceIdentifier"; // Import helper global kamu
 
 export async function trackUserPrintActivity(actionType: 'PDF' | 'IMAGE' | 'PRINT') {
-  try {
-    // 1. Ambil ID unik perangkat dari cookie browser via helper global
-    const deviceId = await getDeviceIdentifier();
+  const session = await auth();
+  if (!session || !session.user?.id) return [];
 
-    const now = new Date();
-    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const now = new Date();
+  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const userId = session.user.id;
 
-    // 2. Cari data statistik perangkat berdasarkan komposit ID & Tanggal hari ini
-    const existingStat = await prisma.userStatistic.findUnique({
+  const existingStat = await prisma.userStatistic.findUnique({
+    where: {
+      userId_date: {
+        userId: userId,
+        date: todayDate,
+      },
+    },
+  });
+
+  if (existingStat) {
+    const updateData: any = {};
+    if (actionType === 'PDF') updateData.pdfCount = { increment: 1 };
+    if (actionType === 'IMAGE') updateData.imageCount = { increment: 1 };
+    if (actionType === 'PRINT') updateData.directPrintCount = { increment: 1 };
+
+    return await prisma.userStatistic.update({
       where: {
         userId_date: {
-          userId: deviceId, // Disinkronkan dengan data string fingerprint perangkat
+          userId: userId,
           date: todayDate,
         },
       },
+      data: updateData,
     });
+  } 
 
-    if (existingStat) {
-      const updateData: any = {};
-      if (actionType === 'PDF') updateData.pdfCount = { increment: 1 };
-      if (actionType === 'IMAGE') updateData.imageCount = { increment: 1 };
-      if (actionType === 'PRINT') updateData.directPrintCount = { increment: 1 };
-
-      return await prisma.userStatistic.update({
-        where: {
-          userId_date: {
-            userId: deviceId,
-            date: todayDate,
-          },
-        },
-        data: updateData,
-      });
-    } 
-    
-    else {
-      // Jika data statistik hari ini belum ada, buat baris baru khusus perangkat ini
-      return await prisma.userStatistic.create({
-        data: {
-          userId: deviceId,
-          date: todayDate,
-          pdfCount: actionType === 'PDF' ? 1 : 0,
-          imageCount: actionType === 'IMAGE' ? 1 : 0,
-          directPrintCount: actionType === 'PRINT' ? 1 : 0,
-        },
-      });
-    }
-  } catch (error: any) {
-    console.error("Gagal mencatat statistik aktivitas cetak:", error.message);
-    return error;
+  else {
+    return await prisma.userStatistic.create({
+      data: {
+        userId: userId,
+        date: todayDate,
+        pdfCount: actionType === 'PDF' ? 1 : 0,
+        imageCount: actionType === 'IMAGE' ? 1 : 0,
+        directPrintCount: actionType === 'PRINT' ? 1 : 0,
+      },
+    });
   }
 }
 
@@ -60,7 +54,15 @@ export async function getUserDashboardStats({
 }: { 
   filter?: 'hari' | 'minggu' | 'bulan' | 'tahun' | 'semua' 
 }) {
-  const deviceId = await getDeviceIdentifier();
+  const session = await auth();
+  let userId: string | null = null;
+  let isAdmin = false;
+
+  if (session && session.user?.id) {
+    userId = session.user.id ?? null;
+    // Cek status admin dari object role baru kamu
+    isAdmin = (session.user as any).role?.role === 'admin';
+  }
 
   const now = new Date();
   let startDate: Date | undefined;
@@ -103,33 +105,61 @@ export async function getUserDashboardStats({
     prevStartDate = new Date(now.getFullYear() - 1, 0, 1);
     prevEndDate = new Date(now.getFullYear(), 0, 1);
 
-    chartStartDate = new Date(now.getFullYear() - 9, 0, 1); // 10 tahun terakhir terhitung tahun ini
+    chartStartDate = new Date(now.getFullYear() - 9, 0, 1);
   }
   else {
     startDate = undefined; 
     prevStartDate = new Date(now.getFullYear() - 1, 0, 1);
     prevEndDate = new Date(now.getFullYear(), 0, 1);
 
-    chartStartDate = new Date(now.getFullYear() - 4, 0, 1); // Default ringkas: 5 tahun ke belakang untuk mode semua
+    chartStartDate = new Date(now.getFullYear() - 4, 0, 1);
   }
 
   // =========================================================
   // 2. QUERY METRIK CARD UTAMA (CURRENT & PREVIOUS)
   // =========================================================
-  const currentStats = await prisma.userStatistic.aggregate({
-    where: {
-      ...(deviceId && { userId: deviceId }),
-      ...(startDate && { date: { gte: startDate } }),
-    },
-    _sum: { pdfCount: true, imageCount: true, directPrintCount: true },
-  });
+  let currentStats;
+  let currentLayout;
+  let currentUserCount = 0; // Inisialisasi awal metrik baru
+  
+  if(userId) {
+    currentStats = await prisma.userStatistic.aggregate({
+      where: {
+        ...(userId && { userId: userId }),
+        ...(startDate && { date: { gte: startDate } }),
+      },
+      _sum: { pdfCount: true, imageCount: true, directPrintCount: true },
+    });
+  
+    currentLayout = await prisma.layout.count({
+      where: {
+        userId: userId,
+        ...(startDate && { createdAt: { gte: startDate } }),
+      },
+    });
+  } else {
+    currentStats = await prisma.userStatistic.aggregate({
+      where: {
+        ...(startDate && { date: { gte: startDate } }),
+      },
+      _sum: { pdfCount: true, imageCount: true, directPrintCount: true },
+    });
+  
+    currentLayout = await prisma.layout.count({
+      where: {
+        ...(startDate && { createdAt: { gte: startDate } }),
+      },
+    });
+  }
 
-  const currentLayout = await prisma.layout.count({
-    where: {
-      userId: deviceId,
-      ...(startDate && { createdAt: { gte: startDate } }),
-    },
-  });
+  // QUERY TOTAL USER BARU (Hanya jika login sebagai Admin)
+  if (isAdmin) {
+    currentUserCount = await prisma.user.count({
+      where: {
+        ...(startDate && { createdAt: { gte: startDate } }),
+      },
+    });
+  }
 
   const pdf = currentStats._sum.pdfCount || 0;
   const gambar = currentStats._sum.imageCount || 0;
@@ -137,48 +167,66 @@ export async function getUserDashboardStats({
   const totalSemua = pdf + gambar + print;
 
   let prevPdf = 0, prevGambar = 0, prevPrint = 0;
+  let prevUserCount = 0;
+
   if (prevStartDate && prevEndDate) {
-    const prevStats = await prisma.userStatistic.aggregate({
-      where: {
-        ...(deviceId && { userId: deviceId }),
-        date: { gte: prevStartDate, lt: prevEndDate },
-      },
-      _sum: { pdfCount: true, imageCount: true, directPrintCount: true },
-    });
+    let prevStats;
+    if(userId) {
+      prevStats = await prisma.userStatistic.aggregate({
+        where: {
+          ...(userId && { userId: userId }),
+          date: { gte: prevStartDate, lt: prevEndDate },
+        },
+        _sum: { pdfCount: true, imageCount: true, directPrintCount: true },
+      });
+    } else {
+      prevStats = await prisma.userStatistic.aggregate({
+        where: {
+          date: { gte: prevStartDate, lt: prevEndDate },
+        },
+        _sum: { pdfCount: true, imageCount: true, directPrintCount: true },
+      });
+    }
     prevPdf = prevStats._sum.pdfCount || 0;
     prevGambar = prevStats._sum.imageCount || 0;
     prevPrint = prevStats._sum.directPrintCount || 0;
+
+    // QUERY USER PERIODE SEBELUMNYA (Untuk hitung persentase naik/turun)
+    if (isAdmin) {
+      prevUserCount = await prisma.user.count({
+        where: {
+          createdAt: { gte: prevStartDate, lt: prevEndDate },
+        },
+      });
+    }
   }
 
   // =========================================================
-  // 3. QUERY DATA RAW DARI DATABASE
+  // 3. QUERY DATA RAW DARI DATABASE (GRAFIK)
   // =========================================================
   const rawChartData = await prisma.userStatistic.findMany({
     where: {
-      ...(deviceId && { userId: deviceId }),
+      ...(userId && { userId: userId }),
       date: { gte: chartStartDate },
     },
     orderBy: { date: 'asc' },
   });
 
   // =========================================================
-  // 4. GENERATOR TEMPLATE KOSONG OTOMATIS (SINKRONISASI GRAFIK)
+  // 4. GENERATOR TEMPLATE KOSONG OTOMATIS
   // =========================================================
   let chartData: Array<{ label: string; pdf: number; gambar: number; print: number; total: number }> = [];
 
   if (filter === 'hari') {
-    // Buat template map untuk 7 hari terakhir berturut-turut
     const dayMap = new Map<string, any>();
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
       const labelStr = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
-      // Simpan format murni tanggal database YYYY-MM-DD sebagai key pencocokan
       const dateKey = d.toISOString().split('T')[0]; 
       dayMap.set(dateKey, { label: labelStr, pdf: 0, gambar: 0, print: 0, total: 0 });
     }
 
-    // Suntikkan data asli database jika ada yang tanggalnya pas
     rawChartData.forEach(d => {
       const dateKey = new Date(d.date).toISOString().split('T')[0];
       if (dayMap.has(dateKey)) {
@@ -194,7 +242,6 @@ export async function getUserDashboardStats({
     chartData = Array.from(dayMap.values());
   } 
   else if (filter === 'minggu') {
-    // Template 4 Minggu Terakhir
     const weekMap = new Map<string, any>();
     for (let i = 3; i >= 0; i--) {
       const d = new Date();
@@ -225,7 +272,6 @@ export async function getUserDashboardStats({
     chartData = Array.from(weekMap.values());
   } 
   else if (filter === 'bulan') {
-    // Template 12 Bulan Penuh dari Januari s/d Desember Tahun Ini
     const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     const monthMap = new Map<string, any>();
     
@@ -249,7 +295,6 @@ export async function getUserDashboardStats({
     chartData = Array.from(monthMap.values());
   } 
   else if (filter === 'tahun' || filter === 'semua') {
-    // Template Tahun (Misal: Ambil jangkauan 5 tahun kebelakang secara berurutan)
     const currentYear = now.getFullYear();
     const yearMap = new Map<string, any>();
     const startYear = filter === 'tahun' ? currentYear - 9 : currentYear - 4;
@@ -288,10 +333,12 @@ export async function getUserDashboardStats({
     totalGambar: gambar,            
     totalPrint: print,      
     totalSemua: totalSemua,
+    totalUser: currentUserCount, // Data total user baru yang ditambahkan
     
     percentPdf: calculatePercentage(pdf, prevPdf),
     percentGambar: calculatePercentage(gambar, prevGambar),
     percentPrint: calculatePercentage(print, prevPrint),
+    percentUser: calculatePercentage(currentUserCount, prevUserCount), // Data persentase naik/turun user
     
     filterAman: filter,
     chartData

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "@/style/globals.css";
 import { poppinsFont } from "@/lib/font";
-import MainBottomBar from "@/components/Layout/MainBottomBar";
 import { PrinterProvider } from '../context/PrinterContext';
+import { ThemeProvider } from "@/context/ThemeContext";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "StrukApp - Buat Struk Digital dengan Mudah",
@@ -17,9 +18,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppinsFont.variable} antialiased bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 min-h-screen flex flex-col`}>
-        <PrinterProvider>
-            {children}
-        </PrinterProvider>
+        <SessionProvider>
+          <ThemeProvider>
+            <PrinterProvider>
+              {children}
+            </PrinterProvider>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

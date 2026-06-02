@@ -6,118 +6,99 @@ import {
   FiFileText, 
   FiTrendingUp, 
   FiCpu, 
-  FiDollarSign, 
-  FiCheckCircle, 
   FiPlus,
   FiCheck,
   FiCopy,
   FiHelpCircle,
   FiUploadCloud,
-  FiCamera
+  FiCamera,
+  FiLayers,
+  FiUsers
 } from 'react-icons/fi';
 import { 
-  FaArrowUpRightFromSquare
+  FaArrowUpRightFromSquare,
+  FaGoogle
 } from 'react-icons/fa6';
-import fpPromise from '@fingerprintjs/fingerprintjs';
-import Cookies from 'js-cookie';
-import { getOrCreateCurrentUser, getUserById } from '@/models/User';
+import { getUserById } from '@/models/User';
 import { getUserDashboardStats } from '@/models/UserStatistic';
 import LoadingScreenSkeleton from '@/components/Loading';
-import { labelWaktu, STATUS_LISENSI_LABELS } from '@/lib/constanta';
+import { exampleHistoryData, labelWaktu, STATUS_LISENSI_LABELS } from '@/lib/constanta';
 import TrendChart from '@/components/TrendChart';
 import { getAllReceipts } from '@/models/Receipt';
-import { formatIDR } from '@/lib/Helpers';
+import { copyToClipboard, formatIDR } from '@/lib/Helpers';
 import Link from 'next/link';
+import { signInWithGoogle } from '@/lib/action';
+import Toast from '@/components/Toast';
+import { useSession } from 'next-auth/react';
 
 export default function PageHomeClient() {
   const [copied, setCopied] = useState(false);
-  const [visitorId, setVisitorId] = useState<string>("");
   const [stats, setStats] = useState<any>({
     totalLayout: 0,
     totalPdf: 0,
     totalGambar: 0,
     totalPrint: 0,
     totalSemua: 0,
+    totalUser: 0,
     percentPdf: 0,
     percentGambar: 0,
     percentPrint: 0,
+    percentUser: 0,
     chartData: [],
     filterAman: 'semua' // Untuk mendeteksi filter aktif di UI
   });
   const [receiptsData, setReceiptsData] = useState<Awaited<ReturnType<typeof getAllReceipts>>>([]);
   const [userData, setUserData] = useState<Awaited<ReturnType<typeof getUserById>>>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+  const session = useSession();
 
-
-  const handleCopy = async () => {
+  const handleGoogleLogin = async () => {
+    setLoadingGoogle(true);
     try {
-      await navigator.clipboard.writeText(visitorId);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await signInWithGoogle();
     } catch (err) {
-      console.error('Gagal menyalin teks: ', err);
+      console.error(err);
+    //   setAlert({ message: 'Gagal masuk dengan Google', type: 'error' });
+    } finally {
+      setLoadingGoogle(false);
     }
   };
 
-  useEffect(() => {
-    const initFingerprint = async () => {
+  const fetchStatistik = async () => {
+    try {
       setLoading(true);
-      try {
-        // A. Load dan dapatkan ID unik dari FingerprintJS
-        const fp = await fpPromise.load();
-        const result = await fp.get();
-        const currentId = result.visitorId;
-        
-        setVisitorId(currentId); 
+      const statistik = await getUserDashboardStats({filter: "hari"});
+      setStats(statistik)
+    } catch(err) {
+      setToast({ type: 'error', title: 'Error', message: "Gagal mendapatkan statistik " + err });
+    } finally {
+      setLoading(false)
+    }
+  }
 
-        // B. SET COOKIE MENGGUNAKAN JS-COOKIE
-        // Pasang kuki agar langsung bisa dibaca oleh Middleware & Server Actions
-        Cookies.set('device_fingerprint', currentId, { 
-          expires: 365, // Bertahan selama 1 tahun
-          secure: true, 
-          sameSite: 'strict',
-          path: '/'
+  const getReceiptsData = async () => {
+    try {
+      setLoading(true);
+      if(session.status == "authenticated") {
+        const receiptTerbaru = await getAllReceipts({ 
+          limit: 3 
         });
-
-        // C. JALANKAN PROSES CEK / BUAT USER DI DATABASE
-        // Server Action ini otomatis membaca kuki 'device_fingerprint' yang baru kita set di atas
-        const userDb = await getOrCreateCurrentUser();
-        
-        if (userDb) {
-          const userAktifitas = await getUserDashboardStats({filter: 'hari'});
-          setStats(userAktifitas);
-          // 1. Set waktu awal hari ini (00:00:00)
-          const awalHariIni = new Date();
-          awalHariIni.setHours(0, 0, 0, 0);
-
-          // 2. Set waktu akhir hari ini (23:59:59)
-          const akhirHariIni = new Date();
-          akhirHariIni.setHours(23, 59, 59, 999);
-
-          // 3. Panggil fungsi dengan filter tersebut + limit 3
-          const receipts = await getAllReceipts({
-            startDateCreatedAt: awalHariIni,
-            endDateCreatedAt: akhirHariIni,
-            limit: 3,
-            sortBy: "createdAt", // Opsional: memastikan urutan berdasarkan waktu dibuat
-            order: "desc"        // Opsional: mengambil 3 data terbaru di hari ini
-          });
-          setReceiptsData(receipts);
-
-          const user = await getUserById(currentId);
-          setUserData(user);
-          console.log("Perangkat berhasil disinkronkan dengan database");
-        }
-
-      } catch (error) {
-        console.error("Gagal menginisialisasi fingerprint atau sinkronisasi DB:", error);
-      } finally {
-        setLoading(false)
+        setReceiptsData(receiptTerbaru)
       }
-    };
-    
-    initFingerprint();
-  }, []);
+      setReceiptsData(exampleHistoryData as any)
+    } catch(err) {
+      setToast({ type: 'error', title: 'Error', message: "Gagal mendapatkan statistik " + err });
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStatistik();
+    getReceiptsData();
+  }, [])
 
   const currentLabel = labelWaktu[stats.filterAman as keyof typeof labelWaktu] || "vs tahun lalu";
   if(loading) return <LoadingScreenSkeleton/>
@@ -143,15 +124,27 @@ export default function PageHomeClient() {
               </div>
               
               {/* Link Bantuan dengan Kaca Transparan (Glassmorphism) */}
-              <a 
-                href="https://wa.me/your-number"
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm"
-              >
-                <FiHelpCircle className="w-4 h-4 text-white/80" /> Chat Bantuan
-              </a>
+              <div className="flex gap-2 flex-wrap">
+                <button 
+                  onClick={handleGoogleLogin}
+                  className="cursor-pointer self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm">
+                  <FaGoogle className="w-4 h-4 text-white/80" /> Login Google
+                </button>
+                <a 
+                  href=""
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="cursor-pointer self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm">
+                  <FiHelpCircle className="w-4 h-4 text-white/80" /> Chat Bantuan
+                </a>
+              </div>
             </div>
+
+            {toast && (
+                <div>
+                    <Toast toast={toast} setToast={setToast} />
+                </div>
+            )}
 
             {/* ==========================================
                 SECTION 2: CORE METRICS GRID (MATTE BLUR THEME)
@@ -171,15 +164,15 @@ export default function PageHomeClient() {
               {/* Box 2: ID Perangkat (Fixed Overflow) */}
               {/* Perbaikan: Tambah min-w-0 agar box ini bisa menyusut dengan fleksibel */}
               <div className="p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm flex flex-col justify-center min-w-0">
-                <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider mb-1.5">ID Perangkat (IP)</span>
+                <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider mb-1.5">ID REFERRAL</span>
                 {/* Perbaikan: Tambah w-full dan overflow-hidden */}
                 <div 
-                  onClick={handleCopy}
+                  onClick={() => copyToClipboard("Silahkan Login Untuk Mendapat Referral Code", setCopied)}
                   className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl px-3 py-1.5 cursor-pointer group hover:bg-black/30 transition-colors w-full overflow-hidden gap-2"
                 >
                   {/* Perbaikan: Tambah truncate agar text hash yang kepanjangan otomatis terpotong titik-titik (...) */}
                   <code className="font-mono text-xs text-blue-200 font-medium select-all group-hover:text-white transition-colors truncate block">
-                    {visitorId}
+                    {"Silahkan Login Untuk Mendapat Referral Code"}
                   </code>
                   {/* Perbaikan: shrink-0 biar tombol copy-nya gak ikut gepeng */}
                   <button 
@@ -219,25 +212,50 @@ export default function PageHomeClient() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
     
           {/* Kartu 1: Layout Dimiliki */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
-                Layout Dimiliki
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center">
-                <FiDollarSign className="w-4 h-4" />
+          {(session.status == "unauthenticated") ? (
+            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
+                  Total User
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                  <FiUsers className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  {stats.totalUser}
+                </h4>
+                <p className={`text-[10px] md:text-xs font-bold flex items-center gap-1 mt-1 ${
+                  stats.percentUser >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                }`}>
+                  <span>{stats.percentUser >= 0 ? `▲ +${stats.percentUser}%` : `▼ ${stats.percentUser}%`}</span>
+                  <span className="text-slate-400 dark:text-zinc-500 font-normal">{currentLabel}</span>
+                </p>
               </div>
             </div>
-            <div className="mt-4">
-              <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {stats.totalLayout}
-              </h4>
-              <p className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-500 font-medium flex items-center gap-1 mt-1">
-                <FaArrowUpRightFromSquare className="w-2.5 h-2.5" />
-                <span>Layout terdaftar</span>
-              </p>
+          ) : (
+            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
+                  Layout Dimiliki
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center">
+                  <FiLayers className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  {stats.totalLayout}
+                </h4>
+                <Link href={"/layout"} className="text-[10px] cursor-pointer hover:text-blue-500 md:text-xs text-slate-400 dark:text-zinc-500 font-medium flex items-center gap-1 mt-1">
+                  <FaArrowUpRightFromSquare className="w-2.5 h-2.5" />
+                  <span>Layout terdaftar</span>
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
+          
 
           {/* Kartu 2: Cetak PDF */}
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
@@ -339,7 +357,7 @@ export default function PageHomeClient() {
                 ) : (
                   // Tampilan jika data ada (maksimal 3)
                   receiptsData.slice(0, 3).map((tx) => {
-                    const isUpload = tx.type === "upload";
+                    const isUpload = tx.type == "RECEIPT_UPLOAD";
                     
                     // Potong nama jika lebih dari 20 karakter
                     const namaReceipt = tx.nama.length > 20 
