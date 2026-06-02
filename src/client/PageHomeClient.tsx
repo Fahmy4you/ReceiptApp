@@ -33,8 +33,9 @@ import { copyToClipboard, formatIDR } from '@/lib/Helpers';
 import Link from 'next/link';
 import { signInWithGoogle } from '@/lib/action';
 import Toast from '@/components/Toast';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { LuLoader, LuUserPen } from 'react-icons/lu';
+import { useRouter } from 'next/navigation';
 
 export default function PageHomeClient() {
   const [copied, setCopied] = useState(false);
@@ -60,6 +61,7 @@ export default function PageHomeClient() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const session = useSession();
+  const router = useRouter();
 
   const handleGoogleLogin = async () => {
     setLoadingGoogle(true);
@@ -76,6 +78,22 @@ export default function PageHomeClient() {
     //   setAlert({ message: 'Gagal masuk dengan Google', type: 'error' });
     } finally {
       setLoadingGoogle(false);
+    }
+  };
+
+  const handleLogoutConfirmation = async () => {
+    const konfirmasi = confirm("Apakah Anda yakin ingin keluar?");
+    if (konfirmasi) {
+      setLoading(true);
+
+      try {
+        await signOut({ callbackUrl: "/" });
+      } catch (error) {
+        
+      } finally {{
+        setLoading(false);
+        router.push("/");
+      }}
     }
   };
 
@@ -179,10 +197,7 @@ export default function PageHomeClient() {
                         <div className="border-t border-slate-100 dark:border-zinc-800/60 my-1"></div>
 
                         <button 
-                          onClick={() => {
-                            // setShowDropdown(false);
-                            // signOut();
-                          }}
+                          onClick={handleLogoutConfirmation}
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors text-left cursor-pointer"
                         >
                           <FiLogOut className="w-4 h-4" />
