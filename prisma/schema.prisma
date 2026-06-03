@@ -16,6 +16,25 @@ enum TypeReceipt {
   RECEIPT_UPLOAD
   RECEIPT_MANUAL
 }
+enum METHODEPAYMENT {
+  qris
+  gopay
+  shopeepay
+  bca
+  bri
+  bni
+  mandiri
+}
+enum BILLINGCYCLE {
+  monthly
+  yearly
+}
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
 
 model Account {
   id                 String  @id @default(cuid())
@@ -64,6 +83,7 @@ model User {
   receipts          Receipt[]
   layouts           Layout[]
   settings          Settings[]
+  transactions      LicenseTRX[]
   lastLogin         DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -111,10 +131,10 @@ model Receipt {
 
 model Layout {
   id          String   @id @default(cuid())
-  name        String   // Nama layout, misal: "Struk Bengkel A"
+  name        String   
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  isDefault   Boolean  @default(false) // Tandai layout default untuk pengguna
+  isDefault   Boolean  @default(false) 
   config      Json     
   receipts    Receipt[]
   
@@ -167,9 +187,30 @@ model License {
   branding        String?         
   levelLicense    Int             @unique @map("level_license")
   pembelian       Int             @default(0)
+  Transactions    LicenseTRX[]
   
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   @@map("license")
+}
+
+model LicenseTRX {
+  id            String            @id @default(cuid())
+  userId        String            @map("user_id")
+  licenseId     String            @map("license_id")
+  total         Float   
+  billingCycle  BILLINGCYCLE      @map("billing_cycle")
+  
+  status        TransactionStatus @default(PENDING)
+  paymentMethod METHODEPAYMENT    @map("payment_method") 
+  paymentCode   String?           @map("payment_code")   
+  expiredDate   DateTime          @map("expired_date")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  license       License           @relation(fields: [licenseId], references: [id])
+
+  @@map("license_transactions")
 }

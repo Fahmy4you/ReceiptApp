@@ -28,7 +28,7 @@ export const getAllLicenses = async (filters?: {
   try {
     const licenses = await prisma.license.findMany({
       orderBy: {
-        [filters?.sortBy || "createdAt"]: filters?.order || "asc", // Urutkan dari yang termurah/terlama biasanya asc
+        [filters?.sortBy || "createdAt"]: filters?.order || "asc",
       },
     });
     return licenses;
@@ -64,8 +64,11 @@ export const createLicense = async (data: {
   buttonTheme: string;
   priceMonthly: number;
   priceYearly: number;
-  discount?: number;
+  discount?: number | null;
   icon: string;
+  branding?: string | null;
+  levelLicense: number;
+  pembelian?: number;
 }) => {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthenticated");
@@ -74,6 +77,15 @@ export const createLicense = async (data: {
   if (!checkAdmin(session)) throw new Error("Forbidden: Akses ditolak");
 
   try {
+    // Validasi Manual: Pastikan levelLicense belum digunakan oleh lisensi lain
+    const existingLevel = await prisma.license.findUnique({
+      where: { levelLicense: data.levelLicense },
+    });
+
+    if (existingLevel) {
+      return { success: false, error: `Level lisensi (${data.levelLicense}) sudah digunakan oleh paket lain!` };
+    }
+
     const newLicense = await prisma.license.create({
       data: {
         name: data.name,
@@ -85,6 +97,9 @@ export const createLicense = async (data: {
         priceYearly: data.priceYearly,
         discount: data.discount ?? null,
         icon: data.icon,
+        branding: data.branding ?? null,
+        levelLicense: data.levelLicense,
+        pembelian: data.pembelian ?? 0,
       },
     });
 
@@ -92,10 +107,15 @@ export const createLicense = async (data: {
     return { success: true, data: newLicense };
   } catch (error: any) {
     console.error("Error creating license:", error);
-    return { 
-      success: false, 
-      error: error.code === "P2002" ? "Nama lisensi sudah digunakan" : "Gagal membuat lisensi" 
-    };
+    if (error.code === "P2002") {
+      // Antisipasi jika ada race condition di level DB
+      const target = error.meta?.target as string[];
+      if (target?.includes("level_license")) {
+        return { success: false, error: "Level lisensi sudah digunakan" };
+      }
+      return { success: false, error: "Nama lisensi sudah digunakan" };
+    }
+    return { success: false, error: "Gagal membuat lisensi" };
   }
 };
 
@@ -114,6 +134,9 @@ export const updateLicense = async (
     priceYearly?: number;
     discount?: number | null;
     icon?: string;
+    branding?: string | null;
+    levelLicense?: number;
+    pembelian?: number;
   }
 ) => {
   const session = await auth();
@@ -126,6 +149,17 @@ export const updateLicense = async (
   if (!existingLicense) throw new Error("Lisensi tidak ditemukan");
 
   try {
+    // Validasi Manual jika levelLicense ikut diubah
+    if (data.levelLicense !== undefined && data.levelLicense !== existingLicense.levelLicense) {
+      const existingLevel = await prisma.license.findUnique({
+        where: { levelLicense: data.levelLicense },
+      });
+
+      if (existingLevel) {
+        return { success: false, error: `Level lisensi (${data.levelLicense}) sudah digunakan oleh paket lain!` };
+      }
+    }
+
     const updatedLicense = await prisma.license.update({
       where: { id },
       data: {
@@ -138,13 +172,19 @@ export const updateLicense = async (
         priceYearly: data.priceYearly,
         discount: data.discount,
         icon: data.icon,
+        branding: data.branding,
+        levelLicense: data.levelLicense,
+        pembelian: data.pembelian,
       },
     });
 
     revalidatePath("/pricing");
     return { success: true, data: updatedLicense };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating license:", error);
+    if (error.code === "P2002") {
+      return { success: false, error: "Nama atau Level lisensi sudah digunakan oleh paket lain" };
+    }
     return { success: false, error: "Gagal memperbarui lisensi" };
   }
 };

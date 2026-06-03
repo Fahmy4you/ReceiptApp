@@ -2,11 +2,15 @@ import { ReceiptElement, SettingsData } from "@/lib/types";
 
 export const DEFAULT_NAME_APP = "StrukApp v1.0"
 export const ID_LICENSE_FREE = "l-free-tier"
+export const PPN = 0.11; // 11% PPN untuk perhitungan harga dengan pajak
 
 export const ROLES = [
   { id: "1", label: "Admin", value: "admin" },
   { id: "2", label: "User", value: "user" }
 ]
+
+
+export const LICENSE_PAYMENT_BILLING = ["monthly", "yearly"] as const;
 
 export const DEFAULT_SETTINGS_FIRST_LOGIN: SettingsData = {
   "logo": null,
@@ -82,6 +86,70 @@ export const RECEIPT_TYPE_LABELS: Record<string, string> = {
   RECEIPT_UPLOAD: "Struk OCR Mode",
   RECEIPT_MANUAL: "Struk Manual Mode",
 };
+
+
+export const PAYMENT_METHODS = [
+  {
+    id: "qris",
+    name: "QRIS",
+    category: "qris_ewallet",
+    fee: 0,
+    icon: "qris",
+    color: "bg-rose-50 border-rose-200 dark:bg-rose-950/20 dark:border-rose-900/50"
+  },
+  {
+    id: "gopay",
+    name: "GoPay",
+    category: "qris_ewallet",
+    fee: 1000,
+    icon: "gopay",
+    color: "bg-cyan-50 border-cyan-200 dark:bg-cyan-950/20 dark:border-cyan-900/50"
+  },
+  {
+    id: "shopeepay",
+    name: "ShopeePay",
+    category: "qris_ewallet",
+    fee: 1000,
+    icon: "shopeepay",
+    color: "bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900/50"
+  },
+  {
+    id: "bca",
+    name: "BCA Virtual Account",
+    category: "va",
+    fee: 2500,
+    icon: "bca",
+    vaPrefix: "119808",
+    color: "bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-900/50"
+  },
+  {
+    id: "mandiri",
+    name: "Mandiri Virtual Account",
+    category: "va",
+    fee: 2500,
+    icon: "mandiri",
+    vaPrefix: "89022",
+    color: "bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-900/50"
+  },
+  {
+    id: "bni",
+    name: "BNI Virtual Account",
+    category: "va",
+    fee: 2500,
+    icon: "bni",
+    vaPrefix: "8241",
+    color: "bg-teal-50 border-teal-200 dark:bg-teal-950/20 dark:border-teal-900/50"
+  },
+  {
+    id: "bri",
+    name: "BRI Virtual Account",
+    category: "va",
+    fee: 2500,
+    icon: "bri",
+    vaPrefix: "12809",
+    color: "bg-blue-50 border-sky-200 dark:bg-blue-950/20 dark:border-sky-900/50"
+  }
+];
 
 export const FAQS = [
   {
