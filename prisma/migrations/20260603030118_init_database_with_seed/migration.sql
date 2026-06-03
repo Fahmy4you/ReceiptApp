@@ -39,8 +39,9 @@ CREATE TABLE "user" (
     "email_verified" TIMESTAMP(3),
     "password" TEXT,
     "kuota" INTEGER NOT NULL DEFAULT 10,
-    "license_id" TEXT NOT NULL DEFAULT 'l-free-tier',
     "role_id" TEXT NOT NULL DEFAULT 'cl-user',
+    "license_id" TEXT NOT NULL DEFAULT 'l-free-tier',
+    "license_end_date" TIMESTAMP(3),
     "lastLogin" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -126,7 +127,9 @@ CREATE TABLE "license" (
     "priceYearly" DOUBLE PRECISION NOT NULL,
     "discount" DOUBLE PRECISION,
     "icon" TEXT NOT NULL,
-    "popular" BOOLEAN NOT NULL DEFAULT false,
+    "branding" TEXT,
+    "level_license" INTEGER NOT NULL,
+    "pembelian" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -159,6 +162,9 @@ CREATE UNIQUE INDEX "user_statistics_userId_date_key" ON "user_statistics"("user
 
 -- CreateIndex
 CREATE UNIQUE INDEX "license_name_key" ON "license"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "license_level_license_key" ON "license"("level_license");
 
 -- AddForeignKey
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

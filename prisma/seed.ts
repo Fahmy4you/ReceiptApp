@@ -30,6 +30,7 @@ async function main() {
       priceMonthly: 0,
       priceYearly: 0,
       discount: 0,
+      levelLicense: 0,
       icon: `<svg className="w-6 h-6 text-slate-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" rx="1" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3" /></svg>`
     }
   });
@@ -46,6 +47,7 @@ async function main() {
       priceMonthly: 29000,
       priceYearly: 278000,
       discount: 0,
+      levelLicense: 1,
       icon: `<svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`
     }
   });
@@ -62,7 +64,8 @@ async function main() {
       priceMonthly: 79000,
       priceYearly: 758000,
       discount: 0,
-      popular: true,
+      branding: "Terlaris",
+      levelLicense: 2,
       icon: `<svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>`
     }
   });
@@ -79,6 +82,7 @@ async function main() {
       priceMonthly: 149000,
       priceYearly: 1428000,
       discount: 0,
+      levelLicense: 3,
       icon: `<svg className="w-6 h-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4M4 19h4m12-12v4m-2-2h4m-5 9l-3-3m0 0l-3 3m3-3V8m0 0l-3 3m3-3l3 3" /></svg>`
     }
   });

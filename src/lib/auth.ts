@@ -19,7 +19,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const userWithRole = await prisma.user.findUnique({
           where: { id: token.sub },
           include: { 
-            role: true 
+            role: true,
+            license: true
           },
         });
 
@@ -31,13 +32,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // 3. Rekam semua data dari database ke dalam Token JWT
         token.whatsappNumber = userWithRole.whatsappNumber;
         token.kuota = userWithRole.kuota;
-        token.license = userWithRole.license;
         token.roleId = userWithRole.roleId;
+        token.licenseId = userWithRole.license_id;
+        token.licenseEndDate = userWithRole.licenseEndDate;
 
         token.roleObj = userWithRole.role ? {
           id: userWithRole.role.id,
           role: userWithRole.role.role || "user"
-        } : { id: "cl-user", role: "user" }; // Fallback jika kosong
+        } : { id: "cl-user", role: "user" };
+        token.licenseObj = userWithRole.license ? {
+          id: userWithRole.license.id,
+          license: userWithRole.license.name || "Free Tier"
+        } : { id: "l-free-tier", license: "Free Tier" };
       }
       
       return token;
@@ -49,9 +55,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.sub as string;
         session.user.whatsappNumber = token.whatsappNumber as string | null;
         session.user.kuota = token.kuota as number;
-        session.user.license = token.license as string;
         session.user.roleId = token.roleId as string;
+        session.user.licenseId = token.licenseId as string;
+        session.user.licenseEndDate = token.licenseEndDate as Date | null;
         session.user.role = token.roleObj as any;
+        session.user.license = token.licenseObj as any;
       } else {
         return null as any;
       }

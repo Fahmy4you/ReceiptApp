@@ -28,7 +28,9 @@ declare module "next-auth" {
     kuota?: number
     license?: StatusLisensi
     roleId?: string
+    licenseId?: string
     lastLogin?: Date | null
+    licenseEndDate?: Date | null
   }
 
   interface JWT {

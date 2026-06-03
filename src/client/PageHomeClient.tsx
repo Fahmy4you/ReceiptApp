@@ -26,7 +26,7 @@ import {
 import { getUserById } from '@/models/User';
 import { getUserDashboardStats } from '@/models/UserStatistic';
 import LoadingScreenSkeleton from '@/components/Loading';
-import { exampleHistoryData, labelWaktu, STATUS_LISENSI_LABELS } from '@/lib/constanta';
+import { exampleHistoryData, labelWaktu } from '@/lib/constanta';
 import TrendChart from '@/components/TrendChart';
 import { getAllReceipts } from '@/models/Receipt';
 import { copyToClipboard, formatIDR } from '@/lib/Helpers';
@@ -54,7 +54,6 @@ export default function PageHomeClient() {
     filterAman: 'semua' // Untuk mendeteksi filter aktif di UI
   });
   const [receiptsData, setReceiptsData] = useState<Awaited<ReturnType<typeof getAllReceipts>>>([]);
-  const [userData, setUserData] = useState<Awaited<ReturnType<typeof getUserById>>>(null);
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
@@ -75,7 +74,7 @@ export default function PageHomeClient() {
       await signInWithGoogle();
     } catch (err) {
       console.error(err);
-    //   setAlert({ message: 'Gagal masuk dengan Google', type: 'error' });
+      setToast({ type: 'error', title: 'Error', message: 'Gagal masuk dengan Google' });
     } finally {
       setLoadingGoogle(false);
     }
@@ -89,7 +88,8 @@ export default function PageHomeClient() {
       try {
         await signOut({ callbackUrl: "/" });
       } catch (error) {
-        
+        console.error(error)
+        setToast({ type: 'error', title: 'Error', message: 'Gagal keluar dari akun' });
       } finally {{
         setLoading(false);
         router.push("/");
@@ -253,7 +253,7 @@ export default function PageHomeClient() {
                 <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider">Status Lisensi</span>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
-                  <p className="font-bold text-sm text-white">{STATUS_LISENSI_LABELS[session.data?.user.license ?? ""] || "No License"}</p>
+                  <p className="font-bold text-sm text-white">{session.data?.user.license?.license || "No License"}</p>
                 </div>
               </div>
 

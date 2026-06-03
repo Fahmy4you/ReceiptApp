@@ -1,4 +1,6 @@
 'use client'
+import LoadingScreenSkeleton from '@/components/Loading';
+import { signInWithGoogle } from '@/lib/action';
 import { FAQS, ID_LICENSE_FREE } from '@/lib/constanta';
 import { FeaturesPlan, PricingPlan, ToastState } from '@/lib/types';
 import { getAllLicenses } from '@/models/License';
@@ -38,7 +40,7 @@ export default function App() {
 
   useEffect(() => {
     if (session.status == "authenticated") {
-      setLicense(session.data?.user?.license ?? null);
+      setLicense(session.data?.user?.licenseId ?? null);
     } else {
       setLicense(null)
     }
@@ -48,12 +50,13 @@ export default function App() {
 
   const handleSelectPlan = async (plan: License): Promise<void> => {
     // 1. Authentication Validation
-    if (session.status !== "authenticated") {
-      setToast({
-        type: 'error',
-        title: 'Gagal',
-        message: 'Silakan masuk menggunakan Google terlebih dahulu untuk membeli paket.'
-      });
+    if(plan.id == ID_LICENSE_FREE && session.status != "authenticated") {
+      await handleGoogleLogin();
+      return;
+    }
+
+    if (session.status != "authenticated") {
+      await handleGoogleLogin();
       return;
     }
     
@@ -68,7 +71,7 @@ export default function App() {
     }
 
     // 3. Inform about free tier default status
-    if (plan.id === 'FREE_TIER') {
+    if (plan.id == ID_LICENSE_FREE) {
       setToast({
         type: 'info',
         title: 'Informasi',
@@ -92,6 +95,25 @@ export default function App() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoadingSelectPlane(true);
+    if(session.status == "authenticated") {
+      setToast({ type: 'info', title: 'Info', message: 'Anda sudah masuk dengan Google' });
+      setLoadingSelectPlane(false);
+      return;
+    }
+
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.error(err);
+      setToast({ type: 'error', title: 'Error', message: 'Gagal masuk dengan Google' });
+    } finally {
+      setLoadingSelectPlane(false);
+    }
+  };
+
+  if(loading) return <LoadingScreenSkeleton/>
   return (
     <div>
       <div className="bg-slate-50 dark:bg-zinc-950 min-h-screen text-slate-800 dark:text-zinc-100 transition-colors duration-300 pb-16 font-sans">
@@ -167,7 +189,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
             {listLicense.map((plan) => {
-              const isActive = plan.id === license;
+              const isActive = plan.id == license;
               const price = isAnnual ? plan.priceYearly : plan.priceMonthly;
               const priceLabel = isAnnual ? '/tahun' : '/bulan';
 
@@ -193,7 +215,7 @@ export default function App() {
                           />
                       </div>
                       {isActive && (
-                        <span className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/25 dark:text-emerald-400 text-[8px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                        <span className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/25 dark:text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">
                           Sedang Aktif
                         </span>
                       )}
@@ -228,12 +250,6 @@ export default function App() {
                     </div>
 
                     <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 space-y-2.5">
-                      {/* <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
-                          <LuCheck className="w-3 h-3 text-blue-500" />
-                        </div>
-                        <span className="text-xs font-extrabold text-slate-700 dark:text-zinc-200">Hahahaha</span>
-                      </div> */}
                       <FeaturesList features={plan.features as unknown as FeaturesPlan} />
                     </div>
 
@@ -253,8 +269,8 @@ export default function App() {
                   <div className="pt-6 mt-6 border-t border-slate-100 dark:border-zinc-800/80">
                     <button
                       onClick={() => handleSelectPlan(plan)}
-                      disabled={loadingSelectPlane || isActive || plan.id == ID_LICENSE_FREE}
-                      className={`w-full cursor-pointer py-3 px-4 rounded-xl text-xs font-extrabold tracking-wider uppercase transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${plan.buttonTheme}`}
+                      disabled={loadingSelectPlane || isActive}
+                      className={`w-full cursor-pointer py-3 px-4 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${plan.buttonTheme}`}
                     >
                       {loadingSelectPlane ? (
                         <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
@@ -338,7 +354,7 @@ export function FeaturesList({ features }: { features: FeaturesPlan }) {
           <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
             <LuCheck className="w-3 h-3 text-blue-500" />
           </div>
-          <span className="text-xs font-extrabold text-slate-700 dark:text-zinc-200">
+          <span className="text-xs font-bold text-slate-700 dark:text-zinc-200">
             {formatFeature(key, value)}
           </span>
         </div>
