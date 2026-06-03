@@ -199,9 +199,9 @@ export default function App() {
                   className={`relative flex flex-col justify-between border rounded-3xl p-6 transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/20 hover:-translate-y-1 ${plan.colorTheme}`}
                 >
                   {/* Badge Terlaris */}
-                  {plan.popular && (
+                  {plan.branding && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[9px] font-black px-3.5 py-1 rounded-full uppercase tracking-widest shadow-md">
-                      POPULER
+                      {plan.branding.toUpperCase()}
                     </span>
                   )}
 
