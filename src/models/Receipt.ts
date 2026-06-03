@@ -186,6 +186,67 @@ export const updateReceipt = async (id: string, data: {
   }
 };
 
+/**
+ * Mendapatkan semua Receipt untuk Admin — termasuk data user (nama, email)
+ */
+export const getAllReceiptsAdmin = async (filters?: {
+  userId?: string;
+  startDateCreatedAt?: Date;
+  endDateCreatedAt?: Date;
+  search?: string;
+  sortBy?: string;
+  order?: "asc" | "desc";
+  limit?: number;
+}) => {
+  const session = await auth();
+  if (!session) throw new Error("Unauthenticated");
+
+  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  if (!isAdmin) throw new Error("Forbidden: Akses ditolak");
+
+  try {
+    const receipts = await prisma.receipt.findMany({
+      where: {
+        ...(filters?.userId && { userId: filters.userId }),
+        ...(filters?.startDateCreatedAt && filters?.endDateCreatedAt && {
+          createdAt: {
+            gte: filters.startDateCreatedAt,
+            lte: filters.endDateCreatedAt,
+          },
+        }),
+        ...(filters?.search && {
+          OR: [
+            { nama: { contains: filters.search, mode: 'insensitive' } },
+          ],
+        }),
+      },
+      include: { layout: true },
+      orderBy: {
+        ...(filters?.sortBy ? { [filters.sortBy]: filters.order || "desc" } : { createdAt: "desc" }),
+      },
+      take: filters?.limit || undefined,
+    });
+
+    // Fetch user data separately using raw SQL
+    const userIds = [...new Set(receipts.map((r) => r.userId))];
+    const users = userIds.length > 0
+      ? await prisma.$queryRawUnsafe<Array<{ id: string; name: string | null; email: string | null }>>(
+          `SELECT id, name, email FROM "user" WHERE id = ANY($1)`,
+          userIds
+        )
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return receipts.map((r) => ({
+      ...r,
+      user: userMap.get(r.userId) || null,
+    }));
+  } catch (error) {
+    console.error("Error fetching admin receipts:", error);
+    return [];
+  }
+};
+
 export const deleteReceipt = async (id: string) => {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthenticated");

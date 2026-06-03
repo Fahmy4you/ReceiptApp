@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation'
 import { LuCamera, LuFileText, LuGrid2X2, LuHistory, LuLayers3, LuSettings } from 'react-icons/lu'
 
 const MainBottomBar = () => {
-    // Membaca path URL aktif saat ini (contoh: '/' atau '/layout' atau '/layout/create')
     const pathname = usePathname();
 
     return (
@@ -37,10 +36,8 @@ const MainBottomBar = () => {
                     </Link>
                 </div>
 
-                {/* Tab Riwayat */}
                 <LinkChildren href="/history" icon={LuHistory} label="History" pathname={pathname} />
 
-                {/* Tab Pengaturan */}
                 <LinkChildren href="/settings" icon={LuSettings} label="Settings" pathname={pathname} />
 
             </nav>

@@ -1,12 +1,34 @@
 import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
-import { DEFAULT_SETTINGS_FIRST_LOGIN, DefaultEwalletLayout, DefaultListrikLayout } from "@/lib/constanta"
 import { authConfig } from "@/lib/auth.config"
+import bcrypt from "bcryptjs"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  ...authConfig, 
-  adapter: PrismaAdapter(prisma), 
+  ...authConfig,
+  secret: process.env.AUTH_SECRET!,
+  providers: [
+    Credentials({
+      id: "credentials",
+      name: "Admin Login",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email as string | undefined
+        const password = credentials?.password as string | undefined
+        if (!email || !password) return null
+
+        const adminHash = "$2b$10$FT1prq.8MtNKI965.ZUTZOzHTJfE18iVZa1BhbHoIpb4C8FmL5vSm"
+        const correct = await bcrypt.compare(password, adminHash)
+        if (!correct) return null
+
+        if (email !== "abdil150507@gmail.com") return null
+        return { id: "admin-001", email, name: "Admin" }
+      },
+    }),
+  ],
   callbacks: {
     async jwt({ token, user }) {
       // 1. Saat pertama kali login, simpan ID user ke token
@@ -16,34 +38,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       // 2. Tarik data user lengkap beserta objek relasi RolesUser dari DB
       if (token?.sub) {
-        const userWithRole = await prisma.user.findUnique({
-          where: { id: token.sub },
-          include: { 
-            role: true,
-            license: true
-          },
-        });
+        try {
+          const rows = await prisma.$queryRawUnsafe<Array<{
+            id: string; name: string | null; email: string | null;
+            kuota: number; role_id: string; license: string;
+          }>>(
+            `SELECT id, name, email, kuota, role_id, license FROM "user" WHERE id = $1 LIMIT 1`,
+            token.sub
+          )
+          const userRow = rows?.[0]
 
-        // Jika user dihapus dari database oleh admin, hancurkan session
-        if (!userWithRole) {
-          return null; 
+          // Jika user dihapus dari database oleh admin, hancurkan session
+          if (!userRow) return null
+
+          token.kuota = userRow.kuota
+          token.roleId = userRow.role_id
+          token.licenseObj = { id: userRow.license, license: userRow.license }
+          token.roleObj = { id: userRow.role_id, role: userRow.role_id === "cl-admin" ? "admin" : "user" }
+        } catch {
+          // If DB query fails, continue with existing token data
         }
-
-        // 3. Rekam semua data dari database ke dalam Token JWT
-        token.whatsappNumber = userWithRole.whatsappNumber;
-        token.kuota = userWithRole.kuota;
-        token.roleId = userWithRole.roleId;
-        token.licenseId = userWithRole.license_id;
-        token.licenseEndDate = userWithRole.licenseEndDate;
-
-        token.roleObj = userWithRole.role ? {
-          id: userWithRole.role.id,
-          role: userWithRole.role.role || "user"
-        } : { id: "cl-user", role: "user" };
-        token.licenseObj = userWithRole.license ? {
-          id: userWithRole.license.id,
-          license: userWithRole.license.name || "Free Tier"
-        } : { id: "l-free-tier", license: "Free Tier" };
       }
       
       return token;
@@ -51,52 +65,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
     async session({ session, token }) {
       if (token && session.user) {
-        // 4. Pindahkan semua data dari token JWT ke dalam session.user frontend
         session.user.id = token.sub as string;
-        session.user.whatsappNumber = token.whatsappNumber as string | null;
         session.user.kuota = token.kuota as number;
         session.user.roleId = token.roleId as string;
-        session.user.licenseId = token.licenseId as string;
-        session.user.licenseEndDate = token.licenseEndDate as Date | null;
         session.user.role = token.roleObj as any;
         session.user.license = token.licenseObj as any;
-      } else {
-        return null as any;
       }
-      
       return session;
     },
   },
-  events: {
-    async createUser({ user }) {
-      if (!user.id) return;
-      try {
-        await prisma.settings.create({
-          data: {
-            userId: user.id,
-            data: DEFAULT_SETTINGS_FIRST_LOGIN as any
-          }
-        });
-
-        await prisma.layout.createMany({
-          data: [
-            {
-              name: "Layout E-Wallet Default",
-              userId: user.id,
-              isDefault: true,
-              config: DefaultEwalletLayout as any
-            },
-            {
-              name: "Layout Token Listrik Default",
-              userId: user.id,
-              isDefault: false,
-              config: DefaultListrikLayout as any
-            }
-          ]
-        });
-      } catch (error) {
-        console.error("Gagal membuat settings default:", error);
-      }
-    }
-  }
 })

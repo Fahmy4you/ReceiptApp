@@ -31,9 +31,8 @@ import TrendChart from '@/components/TrendChart';
 import { getAllReceipts } from '@/models/Receipt';
 import { copyToClipboard, formatIDR } from '@/lib/Helpers';
 import Link from 'next/link';
-import { signInWithGoogle } from '@/lib/action';
 import Toast from '@/components/Toast';
-import { signOut, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { LuLoader, LuUserPen } from 'react-icons/lu';
 import { useRouter } from 'next/navigation';
 
@@ -69,12 +68,10 @@ export default function PageHomeClient() {
       setLoadingGoogle(false);
       return;
     }
-
     try {
-      await signInWithGoogle();
+      await signIn("google", { redirectTo: "/" });
     } catch (err) {
       console.error(err);
-      setToast({ type: 'error', title: 'Error', message: 'Gagal masuk dengan Google' });
     } finally {
       setLoadingGoogle(false);
     }
@@ -174,10 +171,9 @@ export default function PageHomeClient() {
                     {showDropdown && (
                       <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 rounded-2xl shadow-xl py-1.5 z-[110] animate-in fade-in slide-in-from-top-2 duration-150">
                         
-                        {/* DASHBOARD UNTUK ADMIN */}
                         {session.data?.user.role?.role === "admin" && (
                           <Link 
-                            href="/dashboard"
+                            href="/admin"
                             onClick={() => setShowDropdown(false)}
                             className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/50 transition-colors"
                           >
@@ -186,7 +182,7 @@ export default function PageHomeClient() {
                           </Link>
                         )}
                         <Link 
-                          href="/profile"
+                          href="/settings"
                           onClick={() => setShowDropdown(false)}
                           className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/50 transition-colors"
                         >
