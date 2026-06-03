@@ -1,7 +1,4 @@
 -- CreateEnum
-CREATE TYPE "StatusLisensi" AS ENUM ('FREE_TIER', 'SILVER_TIER', 'GOLDEN_TIER', 'PLATINUM_TIER');
-
--- CreateEnum
 CREATE TYPE "TypeReceipt" AS ENUM ('RECEIPT_UPLOAD', 'RECEIPT_MANUAL');
 
 -- CreateTable
@@ -42,7 +39,7 @@ CREATE TABLE "user" (
     "email_verified" TIMESTAMP(3),
     "password" TEXT,
     "kuota" INTEGER NOT NULL DEFAULT 10,
-    "license" "StatusLisensi" NOT NULL DEFAULT 'FREE_TIER',
+    "license_id" TEXT NOT NULL DEFAULT 'l-free-tier',
     "role_id" TEXT NOT NULL DEFAULT 'cl-user',
     "lastLogin" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -117,6 +114,25 @@ CREATE TABLE "user_statistics" (
     CONSTRAINT "user_statistics_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "license" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "features" JSONB NOT NULL,
+    "colorTheme" TEXT NOT NULL,
+    "buttonTheme" TEXT NOT NULL,
+    "priceMonthly" DOUBLE PRECISION NOT NULL,
+    "priceYearly" DOUBLE PRECISION NOT NULL,
+    "discount" DOUBLE PRECISION,
+    "icon" TEXT NOT NULL,
+    "popular" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "license_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "accounts_provider_provider_account_id_key" ON "accounts"("provider", "provider_account_id");
 
@@ -141,11 +157,17 @@ CREATE INDEX "user_statistics_userId_date_idx" ON "user_statistics"("userId", "d
 -- CreateIndex
 CREATE UNIQUE INDEX "user_statistics_userId_date_key" ON "user_statistics"("userId", "date");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "license_name_key" ON "license"("name");
+
 -- AddForeignKey
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user" ADD CONSTRAINT "user_license_id_fkey" FOREIGN KEY ("license_id") REFERENCES "license"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "user" ADD CONSTRAINT "user_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles_user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

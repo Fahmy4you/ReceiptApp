@@ -12,13 +12,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum StatusLisensi {
-  FREE_TIER
-  SILVER_TIER
-  GOLDEN_TIER
-  PLATINUM_TIER
-}
-
 enum TypeReceipt {
   RECEIPT_UPLOAD
   RECEIPT_MANUAL
@@ -63,8 +56,9 @@ model User {
   emailVerified     DateTime?     @map("email_verified")
   password          String? 
   kuota             Int           @default(10)
-  license           StatusLisensi @default(FREE_TIER)
   roleId            String        @default("cl-user") @map("role_id")
+  license_id        String        @default("l-free-tier") @map("license_id")
+  licenseEndDate    DateTime?     @map("license_end_date")
   accounts          Account[]
   sessions          Session[]
   receipts          Receipt[]
@@ -74,6 +68,7 @@ model User {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
+  license License @relation(fields: [license_id], references: [id], onDelete: Cascade)
   role RolesUser @relation(fields: [roleId], references: [id], onDelete: Cascade)
  
   @@map("user")
@@ -155,4 +150,24 @@ model UserStatistic {
   @@index([userId, date])
 
   @@map("user_statistics")
+}
+
+model License {
+  id              String          @id @default(cuid())
+  name            String          @unique
+  description     String
+  features        Json
+  users           User[]
+  colorTheme      String
+  buttonTheme     String
+  priceMonthly    Float
+  priceYearly     Float
+  discount        Float?   
+  icon            String      
+  popular         Boolean         @default(false)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("license")
 }

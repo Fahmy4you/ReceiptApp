@@ -8,12 +8,15 @@ declare module "next-auth" {
       id: string
       whatsappNumber?: string | null
       kuota: number
-      license: StatusLisensi
+      license: {
+        id: string
+        name: string
+      }
       roleId: string
       lastLogin?: Date | null
       createdAt: Date
       updatedAt: Date
-      role?: {
+      role: {
         id: string
         role: string
       }

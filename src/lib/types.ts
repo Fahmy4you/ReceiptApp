@@ -1,4 +1,4 @@
-import { Prisma, StatusLisensi } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { weightConstanta } from "@/lib/constanta";
 import { IconType } from "react-icons";
 
@@ -141,7 +141,7 @@ export interface ToastState {
 }
 
 export interface PricingPlan {
-  id: StatusLisensi;
+  id: string;
   name: string;
   tagline: string;
   priceMonthly: number;
@@ -153,4 +153,9 @@ export interface PricingPlan {
   buttonTheme: string;
   badgeText?: string;
   icon: IconType;
+}
+
+export interface FeaturesPlan {
+  token_perhari_yang_didapat: string;
+  maksimal_layout: string;
 }
