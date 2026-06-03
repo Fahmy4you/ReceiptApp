@@ -1,11 +1,13 @@
 'use client'
 import LoadingScreenSkeleton from '@/components/Loading';
+import Toast from '@/components/Toast';
 import { signInWithGoogle } from '@/lib/action';
 import { FAQS, ID_LICENSE_FREE } from '@/lib/constanta';
 import { FeaturesPlan, PricingPlan, ToastState } from '@/lib/types';
 import { getAllLicenses } from '@/models/License';
 import { License } from '@prisma/client';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import {
@@ -17,6 +19,7 @@ import {
 
 export default function App() {
   const session = useSession();
+  const router = useRouter();
 
   const [isAnnual, setIsAnnual] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -55,10 +58,10 @@ export default function App() {
       return;
     }
 
-    if (session.status != "authenticated") {
-      await handleGoogleLogin();
-      return;
-    }
+    // if (session.status != "authenticated") {
+    //   await handleGoogleLogin();
+    //   return;
+    // }
     
     // 2. Prevent selecting already active license
     if (plan.id == license) {
@@ -82,6 +85,7 @@ export default function App() {
 
     try {
       setLoadingSelectPlane(true);
+      router.push(`/license/payment?license=${plan.id}&billing=${isAnnual ? 'yearly' : 'monthly'}`);
 
     } catch (error) {
       console.error(error);
@@ -116,6 +120,11 @@ export default function App() {
   if(loading) return <LoadingScreenSkeleton/>
   return (
     <div>
+      {toast && (
+          <div>
+              <Toast toast={toast} setToast={setToast} />
+          </div>
+      )}
       <div className="bg-slate-50 dark:bg-zinc-950 min-h-screen text-slate-800 dark:text-zinc-100 transition-colors duration-300 pb-16 font-sans">
 
         {/* HEADER AREA */}
@@ -167,7 +176,7 @@ export default function App() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider leading-none">Lisensi Anda Saat Ini</p>
-                  <h5 className="font-extrabold text-xs md:text-sm text-slate-800 dark:text-zinc-100 truncate mt-1">
+                  <h5 className="font-bold text-xs md:text-sm text-slate-800 dark:text-zinc-100 truncate mt-1">
                     {session.data.user.license.name || "Free Tier Account"} ({session.data?.user?.name || "User"})
                   </h5>
                 </div>
@@ -175,7 +184,7 @@ export default function App() {
               <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto text-xs font-bold border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-zinc-800">
                 <div className="text-left sm:text-right">
                   <p className="text-[10px] text-slate-400 dark:text-zinc-500">Sisa Kuota OCR</p>
-                  <p className="text-slate-800 dark:text-zinc-100 text-xs md:text-sm font-black">{session.data?.user?.kuota ?? 0} Scan OCR</p>
+                  <p className="text-slate-800 dark:text-zinc-100 text-xs md:text-sm font-bold">{session.data?.user?.kuota ?? 0} Scan OCR</p>
                 </div>
                 <span className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 px-3.5 py-1.5 rounded-xl uppercase tracking-widest text-[9px] font-black shrink-0">
                   AKTIF
@@ -277,7 +286,7 @@ export default function App() {
                       ) : isActive ? (
                         <span>PAKET AKTIF SAAT INI</span>
                       ) : plan.id == ID_LICENSE_FREE ? (
-                        <span>GUNAKAN GRATIS</span>
+                        <span>DAFTAR GRATIS</span>
                       ) : (
                         <>
                           <span>BERLANGGANAN</span>
