@@ -8,6 +8,7 @@ import { fontConfig, weightConstanta } from '@/lib/constanta';
 import { cleanCurrencyInput, formatIDR, formatReceiptDate } from '@/lib/Helpers';
 import { cookies } from 'next/headers';
 import { trackUserPrintActivity } from '@/models/UserStatistic';
+import { auth } from '@/lib/auth';
 
 const normalizeKey = (label?: string) => label ? label.toLowerCase().trim().replace(/\s+/g, '_') : '';
 if (!Handlebars.helpers.eq) {
@@ -25,6 +26,14 @@ export async function POST(req: Request) {
         
         const body = await req.json();
         let { formData, config, format = 'pdf' } = body;
+
+        const session = await auth();
+        if (session?.user?.id) {
+          try {
+            const { prisma } = await import("@/lib/prisma");
+            await prisma.$executeRawUnsafe(`UPDATE "user" SET kuota = GREATEST(0, kuota - 1) WHERE id = $1`, session.user.id);
+          } catch {}
+        }
 
         if(format == 'png') {
             await trackUserPrintActivity('IMAGE');

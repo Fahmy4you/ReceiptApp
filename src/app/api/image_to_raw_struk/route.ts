@@ -1,6 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai"; // Tambahkan Type untuk skema
+import { GoogleGenAI, Type } from "@google/genai";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
@@ -14,6 +15,17 @@ export async function POST(req: Request) {
 
     if (!deviceId) {
       return NextResponse.json({ error: "ID Perangkat tidak ditemukan" }, { status: 400 });
+    }
+
+    const session = await auth();
+    if (session?.user?.id) {
+      const rows = await (await import("@/lib/prisma")).prisma.$queryRawUnsafe<Array<{ kuota: number }>>(
+        `SELECT kuota FROM "user" WHERE id = $1 LIMIT 1`, session.user.id
+      );
+      const userKuota = rows?.[0]?.kuota ?? 0;
+      if (userKuota <= 0) {
+        return NextResponse.json({ error: "Kuota OCR habis. Isi ulang kuota untuk melanjutkan." }, { status: 403 });
+      }
     }
     
     const { imageBase64, mimeType, targetFields } = await req.json();
@@ -105,6 +117,13 @@ Catatan Pengolahan Nilai:
             success: false,
             error: parsedResult.error_layout || "Gambar tidak sesuai dengan permintaan layout, buat layout baru"
           });
+        }
+
+        if (session?.user?.id) {
+          try {
+            const { prisma } = await import("@/lib/prisma");
+            await prisma.$executeRawUnsafe(`UPDATE "user" SET kuota = kuota - 1 WHERE id = $1 AND kuota > 0`, session.user.id);
+          } catch {}
         }
 
         return NextResponse.json({ 
