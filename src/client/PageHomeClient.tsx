@@ -254,7 +254,7 @@ export default function PageHomeClient() {
                 <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider">Status Lisensi</span>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
-                  <p className="font-bold text-sm text-white">{session.data?.user.license?.license || "No License"}</p>
+                  <p className="font-bold text-sm text-white">{session.data?.user.license?.name || "No License"}</p>
                 </div>
               </div>
 
