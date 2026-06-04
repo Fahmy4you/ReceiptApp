@@ -338,7 +338,7 @@ export default function App() {
   );
 }
 
-export function FeaturesList({ features }: { features: FeaturesPlan }) {
+function FeaturesList({ features }: { features: FeaturesPlan }) {
 
   // Fungsi untuk memformat Key dan Value sesuai request kamu
   const formatFeature = (key: string, value: string) => {

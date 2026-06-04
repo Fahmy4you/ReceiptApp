@@ -22,15 +22,10 @@ export const getAllUsers = async (filters?: {
   }
 
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        roleId: filters?.roleId || undefined,
-      },
-      orderBy: {
-        [filters?.sortBy || "createdAt"]: filters?.order || "desc",
-      },
-    });
-    return users;
+    const users = await prisma.$queryRawUnsafe<Array<Record<string, any>>>(
+      `SELECT id, name, email, role_id, kuota FROM "user" ORDER BY "createdAt" DESC`
+    );
+    return users as any;
   } catch (error) {
     console.error("Error fetching users:", error);
     return [];
@@ -53,10 +48,10 @@ export const getUserById = async (id: string) => {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id },
-    });
-    return user;
+    const rows = await prisma.$queryRawUnsafe<Array<{ id: string; name: string | null; email: string | null }>>(
+      `SELECT id, name, email FROM "user" WHERE id = $1 LIMIT 1`, id
+    );
+    return rows?.[0] || null;
   } catch (error) {
     console.error("Error fetching user by id:", error);
     return null;

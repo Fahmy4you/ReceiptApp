@@ -69,9 +69,10 @@ export default function PageHomeClient() {
       return;
     }
     try {
-      await signIn("google", { redirectTo: "/" });
-    } catch (err) {
+      await signIn("google", { callbackUrl: "/" });
+    } catch (err: any) {
       console.error(err);
+      setToast({ type: 'error', title: 'Error', message: err?.message || "Gagal login" });
     } finally {
       setLoadingGoogle(false);
     }

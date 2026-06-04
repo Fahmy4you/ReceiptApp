@@ -1,4 +1,5 @@
 import NextAuth from "next-auth"
+import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import { authConfig } from "@/lib/auth.config"
@@ -8,6 +9,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   secret: process.env.AUTH_SECRET!,
   providers: [
+    Google,
     Credentials({
       id: "credentials",
       name: "Admin Login",

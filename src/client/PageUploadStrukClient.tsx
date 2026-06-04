@@ -61,7 +61,27 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
 
     useEffect(() => {
         rebuildFormSchema(DefaultConfigLayout);
-    }, []);
+        if (!document.cookie.includes("device_fingerprint=")) {
+            const id = crypto.randomUUID();
+            document.cookie = `device_fingerprint=${id};path=/;max-age=${60*60*24*365};SameSite=Lax`;
+        }
+        if (session.status === "authenticated") {
+            const pending = localStorage.getItem("pendingStruk");
+            if (pending) {
+                try {
+                    const data = JSON.parse(pending);
+                    createReceipt({
+                        nama: data.nama,
+                        layoutId: data.layoutId,
+                        total: data.total,
+                        content: data.content,
+                        type: data.type,
+                    });
+                    localStorage.removeItem("pendingStruk");
+                } catch (e) { console.error(e); }
+            }
+        }
+    }, [session.status]);
 
     // Fungsi pembangun skema ulang data objek struk secara reaktif mengikuti config aktif
     const rebuildFormSchema = (targetConfig: ReceiptElement[]) => {
@@ -135,18 +155,8 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
             return;
         }
 
-        if(session.status !== "authenticated") {
-            setToast({
-                type: 'error',
-                title: 'Gagal',
-                message: 'Anda harus login untuk menggunakan fitur ini.'
-            });
-            return;
-        }
-
         setIsGenerating(true);
         try {
-            // 1. Filter config untuk mendapatkan daftar field yang butuh diekstraksi AI secara dinamis
             const fieldsToExtract = config
                 .filter(el => el.type === 'input_text' && !NOT_TASK_AI_TYPE_INPUT.includes(el.dataType || ''))
                 .map(el => ({
@@ -166,57 +176,24 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
             });
 
             if (!res.ok) {
-                setToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: "Terjadi kesalahan saat OCR, Coba lagi"
-                });
+                setToast({ type: 'error', title: 'Gagal', message: "Terjadi kesalahan saat OCR, Coba lagi" });
                 return;
             }
 
             const aiResponse = await res.json();
-            // const aiResponse: any = {
-            //     "success": true,
-            //     "extractedData": {
-            //         "kode_referensi": "0120260516104503",
-            //         "tanggal": "16 Mei 2026",
-            //         "waktu": "17:45",
-            //         "nama": "Ibunya Mimay",
-            //         "e-wallet": "GoPay",
-            //         "no.hp": "****2500",
-            //         "nominal": "100000"
-            //     },
-            //     "modelUsed": "gemini-3-flash-preview"
-            // }
-            console.log(aiResponse);
-
-            if(aiResponse.error) {
-                setToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: aiResponse.error
-                });
+            if (aiResponse.error) {
+                setToast({ type: 'error', title: 'Gagal', message: aiResponse.error });
                 return;
             }
 
-            // Perbarui data struk menggunakan gabungan data lama dan hasil ekstraksi AI yang baru
-            let updatedStrukData = {
-                ...strukData,
-                ...aiResponse.extractedData,
-            };
+            let updatedStrukData = { ...strukData, ...aiResponse.extractedData };
 
             const { finalTotal, updates } = calculateReceiptTotal({
-                config,
-                formData: updatedStrukData,
-                settings
+                config, formData: updatedStrukData, settings
             });
-            updatedStrukData = {
-                ...updatedStrukData,
-                ...updates
-            };
+            updatedStrukData = { ...updatedStrukData, ...updates };
             setStrukData(updatedStrukData);
 
-            // Logika Pengambilan Nama
             const findNameValue = () => {
                 const priorityLabels = ['penerima', 'nama'];
                 for (const target of priorityLabels) {
@@ -238,36 +215,38 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
                 }
                 return null;
             };
-        
+
             const randomText = Math.random().toString(36).substring(2, 10).toUpperCase();
             const namaHistory = findNameValue() || updatedStrukData['user'] || randomText;
-        
-            // Simpan Ke History Database
-            const saveInHistory = await createReceipt({
-                nama: namaHistory,
-                layoutId: configId === "default_system" ? null : configId,
-                total: finalTotal,
-                content: updatedStrukData,
-                type: "RECEIPT_UPLOAD"
-            });
 
-            if(saveInHistory.success) {
-                setShowModal(true);
-            } else {
-                setToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal menyimpan data ke history'
+            if (session.status === "authenticated") {
+                const saveInHistory = await createReceipt({
+                    nama: namaHistory,
+                    layoutId: configId === "default_system" ? null : configId,
+                    total: finalTotal,
+                    content: updatedStrukData,
+                    type: "RECEIPT_UPLOAD"
                 });
-                return;
+                if (saveInHistory.success) {
+                    setShowModal(true);
+                } else {
+                    setToast({ type: 'error', title: 'Gagal', message: 'Gagal menyimpan data ke history' });
+                    return;
+                }
+            } else {
+                localStorage.setItem("pendingStruk", JSON.stringify({
+                    nama: namaHistory,
+                    layoutId: configId === "default_system" ? null : configId,
+                    total: finalTotal,
+                    content: updatedStrukData,
+                    type: "RECEIPT_UPLOAD",
+                    config: config,
+                }));
+                setShowModal(true);
             }
         } catch (err) {
             console.error(err);
-            setToast({
-                type: 'error',
-                title: 'Gagal',
-                message: 'Terjadi kesalahan saat OCR, Coba lagi'
-            });
+            setToast({ type: 'error', title: 'Gagal', message: 'Terjadi kesalahan saat OCR, Coba lagi' });
         } finally {
             setIsGenerating(false);
         }

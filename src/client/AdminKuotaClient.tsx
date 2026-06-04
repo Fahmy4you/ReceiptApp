@@ -29,7 +29,7 @@ export default function AdminKuotaClient({ licenses }: { licenses: License[] }) 
     try {
       const res = await updateLicense(freeTier.id, { features: { token_perhari_yang_didapat: tokenPerDay, maksimal_layout: maxLayout } } as any);
       if (res.success) { setToast({ type: 'success', title: 'Berhasil', message: 'Kuota gratis diperbarui' }); setChanged(false); }
-      else { setToast({ type: 'error', title: 'Gagal', message: res.error }); }
+      else { setToast({ type: 'error', title: 'Gagal', message: res.error || "Terjadi kesalahan" }); }
     } catch (err: any) { setToast({ type: 'error', title: 'Error', message: err.message });
     } finally { setSaving(false); }
   };

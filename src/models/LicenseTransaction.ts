@@ -259,6 +259,31 @@ export const getTransactionNoPendingByUserId = async (userId: string) => {
 };
 
 /**
+ * User: Membatalkan transaksi pending milik sendiri
+ */
+export const cancelMyTransaction = async () => {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "Unauthenticated" };
+
+  try {
+    const tx = await prisma.licenseTRX.findFirst({
+      where: { userId: session.user.id, status: "PENDING" },
+    });
+    if (!tx) return { success: false, error: "Tidak ada transaksi pending" };
+
+    await prisma.licenseTRX.update({
+      where: { id: tx.id },
+      data: { status: "FAILED" },
+    });
+
+    return { success: true, message: "Transaksi berhasil dibatalkan" };
+  } catch (error) {
+    console.error("Error cancelling transaction:", error);
+    return { success: false, error: "Gagal membatalkan transaksi" };
+  }
+};
+
+/**
  * Admin: Menghapus log/riwayat transaksi dari database (Hard Delete)
  */
 export const deleteTransaction = async (id: string) => {

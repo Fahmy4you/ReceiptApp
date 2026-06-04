@@ -1,12 +1,14 @@
 'use client';
 import { DEFAULT_NAME_APP } from "@/lib/constanta";
 import { formatIDR, copyToClipboard } from "@/lib/Helpers";
-import { LuArrowLeft as ArrowLeft, LuClock as Clock, LuCopy as Copy, LuQrCode as QrCode, LuCheck as Check, LuInfo as Info, LuCircleCheck as CheckCircle } from "react-icons/lu";
+import { LuArrowLeft as ArrowLeft, LuClock as Clock, LuCopy as Copy, LuQrCode as QrCode, LuCheck as Check, LuInfo as Info, LuCircleCheck as CheckCircle, LuBan as XCircle } from "react-icons/lu";
 import { LicenseTRX } from "@prisma/client";
 import Link from "next/link";
 import RenderLogoBrandTransaction, { PaymentInstructions } from "@/components/RenderLogoBrandTransaction";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { cancelMyTransaction } from "@/models/LicenseTransaction";
+import Toast from "@/components/Toast";
 
 export default function PageExecutionPayment({
   transaction
@@ -32,12 +34,36 @@ export default function PageExecutionPayment({
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const [countdown, setCountdown] = useState(calculateSecondsLeft());
-  const [copied, setCopied] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Jika waktu sudah habis, tidak perlu menyalakan interval timer
-    if (countdown <= 0) return;
+    setCountdown(calculateSecondsLeft());
+    setMounted(true);
+  }, []);
+  const [copied, setCopied] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+
+  const handleCancel = async () => {
+    if (!confirm("Yakin ingin membatalkan transaksi ini?")) return;
+    setCancelling(true);
+    try {
+      const res = await cancelMyTransaction();
+      if (res.success) {
+        router.push("/license");
+      } else {
+        setToast({ type: 'error', title: 'Gagal', message: res.error || "Gagal membatalkan" });
+      }
+    } catch {
+      setToast({ type: 'error', title: 'Error', message: "Terjadi kesalahan" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!mounted || countdown <= 0) return;
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -51,7 +77,7 @@ export default function PageExecutionPayment({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [countdown]);
+  }, [countdown, mounted]);
 
   
 
@@ -71,7 +97,7 @@ export default function PageExecutionPayment({
               <p className="text-[11px] text-amber-700 dark:text-amber-500">Selesaikan sebelum waktu habis</p>
             </div>
           </div>
-          <div className="text-lg font-mono font-black text-amber-600 dark:text-amber-400">{formatTime(countdown)}</div>
+          <div suppressHydrationWarning className="text-lg font-mono font-black text-amber-600 dark:text-amber-400">{mounted ? formatTime(countdown) : "--:--:--"}</div>
         </div>
 
         <div className="p-6 sm:p-8 space-y-8">
@@ -143,11 +169,17 @@ export default function PageExecutionPayment({
             <p className="text-xs text-zinc-500">Silakan lakukan transfer sesuai rincian nominal di atas melalui M-Banking atau Dompet Digital pilihan Anda.</p>
           </div>
 
-          {/* <button disabled={isProcessing} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-lg">
-            {isProcessing ? "Memverifikasi..." : "Simulasi Pembayaran Sukses (I Have Paid)"}
-          </button> */}
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="w-full py-3 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            <XCircle className="w-4 h-4" />
+            {cancelling ? "Membatalkan..." : "Batalkan Transaksi"}
+          </button>
         </div>
       </div>
+      {toast && <Toast toast={toast} setToast={setToast} />}
     </div>
   );
 }
