@@ -1,4 +1,3 @@
-import { StatusLisensi } from "@prisma/client"
 import NextAuth, { type DefaultSession } from "next-auth"
 
 
@@ -26,7 +25,6 @@ declare module "next-auth" {
   interface User {
     whatsappNumber?: string | null
     kuota?: number
-    license?: StatusLisensi
     roleId?: string
     licenseId?: string
     lastLogin?: Date | null
@@ -37,7 +35,6 @@ declare module "next-auth" {
     sub: string
     whatsappNumber?: string | null
     kuota?: number
-    license?: StatusLisensi
     roleId?: string
     roleObj?: {
       id: string

@@ -22,11 +22,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials?.password as string | undefined
         if (!email || !password) return null
 
-        const adminHash = "$2b$10$FT1prq.8MtNKI965.ZUTZOzHTJfE18iVZa1BhbHoIpb4C8FmL5vSm"
+        const adminEmail = process.env.ADMIN_EMAIL || "admin@struk.app"
+        const adminHash = process.env.ADMIN_PASSWORD_HASH || "$2b$10$FT1prq.8MtNKI965.ZUTZOzHTJfE18iVZa1BhbHoIpb4C8FmL5vSm"
+        if (email !== adminEmail) return null
+
         const correct = await bcrypt.compare(password, adminHash)
         if (!correct) return null
 
-        if (email !== "abdil150507@gmail.com") return null
         return { id: "admin-001", email, name: "Admin" }
       },
     }),

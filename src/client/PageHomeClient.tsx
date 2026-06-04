@@ -32,7 +32,7 @@ import { getAllReceipts } from '@/models/Receipt';
 import { copyToClipboard, formatIDR } from '@/lib/Helpers';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { LuLoader, LuUserPen } from 'react-icons/lu';
 import { useRouter } from 'next/navigation';
 
@@ -62,18 +62,22 @@ export default function PageHomeClient() {
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
+    if(session.status == "authenticated") return;
     setLoadingGoogle(true);
-    if(session.status == "authenticated") {
-      setToast({ type: 'info', title: 'Info', message: 'Anda sudah masuk dengan Google' });
-      setLoadingGoogle(false);
-      return;
-    }
     try {
-      await signIn("google", { callbackUrl: "/" });
-    } catch (err: any) {
+      const res = await fetch("/api/auth/csrf");
+      const { csrfToken } = await res.json();
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "/api/auth/signin/google";
+      form.innerHTML = `
+        <input name="csrfToken" value="${csrfToken}" />
+        <input name="callbackUrl" value="/" />
+      `;
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
       console.error(err);
-      setToast({ type: 'error', title: 'Error', message: err?.message || "Gagal login" });
-    } finally {
       setLoadingGoogle(false);
     }
   };
