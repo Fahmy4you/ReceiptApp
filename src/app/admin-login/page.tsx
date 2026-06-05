@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { useState, useEffect } from "react"
+import { signIn, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { LuLoader, LuShield, LuEye, LuEyeOff } from "react-icons/lu"
 
@@ -12,6 +12,13 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const session = useSession()
+
+  useEffect(() => {
+    if (session.status === "authenticated") {
+      router.push("/")
+    }
+  }, [session.status, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

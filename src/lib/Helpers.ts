@@ -184,7 +184,8 @@ export const calculateReceiptTotal = ({ config, formData, settings }: CalculateR
   // 1. Cari field Nominal
   const nominalField = config.find(el => el.dataType === 'Nominal' || el.dataType === 'Currency');
   const nominalKey = nominalField ? normalizeKey(nominalField.label || "") : "nominal";
-  const nominalValue = Number(formData[nominalKey]) || 0;
+  const rawNominal = (formData[nominalKey] || "").toString().replace(/\./g, "").replace(/,/g, ".");
+  const nominalValue = Number(rawNominal) || 0;
 
   // 2. Cari field Admin
   const adminField = config.find(el => el.dataType === 'Admin_Fee');
@@ -201,9 +202,10 @@ export const calculateReceiptTotal = ({ config, formData, settings }: CalculateR
     updates['reference_set'] = receiptMeta.reference_set;
 
     // Cek apakah ada input admin manual, jika tidak ada pakai kalkulasi dinamis dari settings DB
-    const currentAdminFee = formData[adminKey] !== undefined && formData[adminKey] !== ''
-      ? Number(formData[adminKey])
-      : receiptMeta.adminFee;
+    const rawAdmin = formData[adminKey] !== undefined && formData[adminKey] !== ''
+      ? formData[adminKey].toString().replace(/\./g, "").replace(/,/g, ".")
+      : "";
+    const currentAdminFee = rawAdmin !== "" ? Number(rawAdmin) : receiptMeta.adminFee;
 
     // Hitung total akhir berdasarkan sakelar showAdmin
     finalTotal = formData.showAdmin 
