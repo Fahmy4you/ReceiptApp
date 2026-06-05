@@ -78,6 +78,11 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
                         type: data.type,
                     });
                     localStorage.removeItem("pendingStruk");
+                    if (data.content && data.config) {
+                        setStrukData(data.content);
+                        setConfig(data.config);
+                        setShowModal(true);
+                    }
                 } catch (e) { console.error(e); }
             }
         }
