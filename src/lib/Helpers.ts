@@ -26,15 +26,8 @@ export const copyToClipboard = async (text: string, setCopied: Dispatch<SetState
   };
 
 export const cleanCurrencyInput = (text: string) => {
-  let cleanText = String(text).replace(/Rp/gi, '');
-
-  // Hapus semua tanda titik yang berfungsi sebagai pemisah ribuan
-  cleanText = cleanText.replace(/\./g, '');
-  
-  // Ambil hanya angka yang tersisa
-  const cleanNumber = cleanText.replace(/[^0-9]/g, '');
-  
-  return cleanNumber == '' || cleanNumber == '0' ? '0' : cleanNumber;
+  const cleanNumber = String(text).replace(/[^0-9]/g, '');
+  return cleanNumber === '' || cleanNumber === '0' ? '0' : cleanNumber;
 };
 
 export const formatIDR = (val: any) => {
@@ -184,7 +177,10 @@ export const calculateReceiptTotal = ({ config, formData, settings }: CalculateR
   // 1. Cari field Nominal
   const nominalField = config.find(el => el.dataType === 'Nominal' || el.dataType === 'Currency');
   const nominalKey = nominalField ? normalizeKey(nominalField.label || "") : "nominal";
-  const rawNominal = (formData[nominalKey] || "").toString().replace(/\./g, "").replace(/,/g, ".");
+  let rawStr = (formData[nominalKey] || "").toString().trim()
+  if (/,00$/.test(rawStr)) rawStr = rawStr.replace(/,00$/, "")
+  rawStr = rawStr.replace(/[^0-9]/g, "")
+  const nominalValue = Number(rawStr) || 0
   const nominalValue = Number(rawNominal) || 0;
 
   // 2. Cari field Admin
@@ -202,10 +198,9 @@ export const calculateReceiptTotal = ({ config, formData, settings }: CalculateR
     updates['reference_set'] = receiptMeta.reference_set;
 
     // Cek apakah ada input admin manual, jika tidak ada pakai kalkulasi dinamis dari settings DB
-    const rawAdmin = formData[adminKey] !== undefined && formData[adminKey] !== ''
-      ? formData[adminKey].toString().replace(/\./g, "").replace(/,/g, ".")
-      : "";
-    const currentAdminFee = rawAdmin !== "" ? Number(rawAdmin) : receiptMeta.adminFee;
+    const currentAdminFee = formData[adminKey] !== undefined && formData[adminKey] !== ''
+      ? Number(formData[adminKey].toString().replace(/[^0-9]/g, "")) || 0
+      : receiptMeta.adminFee;
 
     // Hitung total akhir berdasarkan sakelar showAdmin
     finalTotal = formData.showAdmin 
