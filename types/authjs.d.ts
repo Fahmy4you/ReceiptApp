@@ -35,6 +35,7 @@ declare module "next-auth" {
     sub: string
     whatsappNumber?: string | null
     kuota?: number
+    kuotaDate?: string
     roleId?: string
     roleObj?: {
       id: string

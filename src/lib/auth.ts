@@ -51,24 +51,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.sub = user.id;
       }
 
-      // 2. Tarik data user lengkap beserta objek relasi RolesUser dari DB
       if (token?.sub) {
         try {
           const rows = await prisma.$queryRawUnsafe<Array<{
             id: string; name: string | null; email: string | null;
             kuota: number; role_id: string; license_id: string;
           }>>(
-            `SELECT id, name, email, kuota, role_id, license_id FROM "user" WHERE id = $1 LIMIT 1`,
+            `SELECT u.id, u.name, u.email, u.kuota, u.role_id, u.license_id FROM "user" u WHERE u.id = $1 LIMIT 1`,
             token.sub
           )
           const userRow = rows?.[0]
 
           if (!userRow) return null
 
-          token.kuota = userRow.kuota
           token.roleId = userRow.role_id
           token.licenseObj = { id: userRow.license_id, license: userRow.license_id }
           token.roleObj = { id: userRow.role_id, role: userRow.role_id === "cl-admin" ? "admin" : "user" }
+
+          // Daily kuota reset check
+          const today = new Date().toISOString().slice(0, 10)
+          const lastReset = (token.kuotaDate as string) || ""
+          if (lastReset !== today) {
+            const licRows = await prisma.$queryRawUnsafe<Array<{ features: any }>>(
+              `SELECT features FROM license WHERE id = $1 LIMIT 1`, userRow.license_id
+            )
+            const dailyLimit = parseInt(licRows?.[0]?.features?.token_perhari_yang_didapat || "10", 10)
+            const latestKuota = await prisma.$queryRawUnsafe<Array<{ kuota: number }>>(
+              `SELECT kuota FROM "user" WHERE id = $1 LIMIT 1`, token.sub
+            )
+            const currentKuota = latestKuota?.[0]?.kuota ?? 0
+            if (lastReset === "" || currentKuota <= 0) {
+              await prisma.$executeRawUnsafe(`UPDATE "user" SET kuota = $1 WHERE id = $2`, dailyLimit, token.sub)
+              token.kuota = dailyLimit
+            } else {
+              token.kuota = currentKuota
+            }
+            token.kuotaDate = today
+          } else {
+            token.kuota = userRow.kuota
+          }
         } catch {
           // If DB query fails, continue with existing token data
         }
