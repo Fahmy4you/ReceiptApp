@@ -78,16 +78,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const lastReset = (token.kuotaDate as string) || ""
           if (lastReset !== today) {
             const dailyLimit = parseInt(licRows?.[0]?.features?.token_perhari_yang_didapat || "10", 10)
-            const latestKuota = await prisma.$queryRawUnsafe<Array<{ kuota: number }>>(
-              `SELECT kuota FROM "user" WHERE id = $1 LIMIT 1`, token.sub
-            )
-            const currentKuota = latestKuota?.[0]?.kuota ?? 0
-            if (lastReset === "" || currentKuota <= 0) {
-              await prisma.$executeRawUnsafe(`UPDATE "user" SET kuota = $1 WHERE id = $2`, dailyLimit, token.sub)
-              token.kuota = dailyLimit
-            } else {
-              token.kuota = currentKuota
-            }
+            await prisma.$executeRawUnsafe(`UPDATE "user" SET kuota = $1 WHERE id = $2`, dailyLimit, token.sub)
+            token.kuota = dailyLimit
             token.kuotaDate = today
           } else {
             token.kuota = userRow.kuota
