@@ -184,7 +184,7 @@ export default function App() {
               <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto text-xs font-bold border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-zinc-800">
                 <div className="text-left sm:text-right">
                   <p className="text-[10px] text-slate-400 dark:text-zinc-500">Sisa Kuota OCR</p>
-                  <p className="text-slate-800 dark:text-zinc-100 text-xs md:text-sm font-bold">{session.data?.user?.kuota ?? 0} Scan OCR</p>
+                  <p className="text-slate-800 dark:text-zinc-100 text-xs md:text-sm font-bold">{session.status === "authenticated" ? (session.data?.user?.kuota ?? 0) : 10} Scan OCR</p>
                 </div>
                 <span className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 px-3.5 py-1.5 rounded-xl uppercase tracking-widest text-[9px] font-black shrink-0">
                   AKTIF

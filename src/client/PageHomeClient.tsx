@@ -287,7 +287,7 @@ export default function PageHomeClient() {
                 <div className="flex flex-col justify-center">
                   <span className="text-white/60 block text-[10px] uppercase font-bold tracking-wider">Sisa Kuota OCR</span>
                   <p className="font-black text-lg text-white mt-0.5">
-                    {session.data?.user.kuota ?? 0} <span className="text-xs text-blue-200 font-bold">Scan</span>
+                    {session.status === "authenticated" ? (session.data?.user.kuota ?? 0) : 10} <span className="text-xs text-blue-200 font-bold">Scan</span>
                 </p>
                 </div>
                 
