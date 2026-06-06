@@ -181,7 +181,6 @@ export const calculateReceiptTotal = ({ config, formData, settings }: CalculateR
   if (/,00$/.test(rawStr)) rawStr = rawStr.replace(/,00$/, "")
   rawStr = rawStr.replace(/[^0-9]/g, "")
   const nominalValue = Number(rawStr) || 0
-  const nominalValue = Number(rawNominal) || 0;
 
   // 2. Cari field Admin
   const adminField = config.find(el => el.dataType === 'Admin_Fee');
