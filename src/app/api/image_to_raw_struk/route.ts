@@ -63,18 +63,24 @@ export async function POST(req: Request) {
     };
 
     // 3. Susun instruksi sejelas mungkin tanpa membingungkan AI
-    const prompt = `Tugas Anda adalah memvalidasi dan mengekstrak data dari gambar struk yang diberikan.
+    const prompt = `Tugas Anda adalah memvalidasi dan mengekstrak data dari gambar bukti transfer / struk yang diberikan.
+                    Langkah Kerja Wajib:
+                    1. Periksa konten gambar. Gambar dapat berupa: resi m-banking resmi, struk thermal fisik, ATAU screenshot teks chat/pesan (seperti WhatsApp/Telegram) yang berisi rincian transfer manual yang valid. 
+                    2. Klasifikasikan sebagai layout TIDAK SESUAI (is_layout_sesuai: false) HANYA JIKA gambar tersebut benar-benar tidak mengandung informasi transfer sama sekali (misal: foto pemandangan, nota belanja barang kelontong/indomaret, atau foto selfie). Jika ada teks Bank, Nominal, dan Nama Penerima (meskipun di dalam chat), set is_layout_sesuai: true.
+                    3. Jika layout TIDAK SESUAI, isi properti 'error_layout' dengan persis: "Gambar tidak sesuai dengan permintaan layout, buat layout baru".
+                    4. Jika layout SESUAI, lakukan ekstraksi bidang berikut ke dalam objek 'data':
+                    ${JSON.stringify(targetFields.map((f: any) => `${f.key} (${f.label})`), null, 2)}
 
-Langkah Kerja Wajib:
-1. Periksa struktur gambar. Jika gambar berupa nota kontan tulisan tangan, struk belanja kelontong, sedangkan kolom targetFields yang diminta membutuhkan data digital khusus e-wallet (seperti nama bank, nomor rekening, bank tujuan), maka klasifikasikan ini sebagai layout TIDAK SESUAI (is_layout_sesuai: false).
-2. Jika layout TIDAK SESUAI, isi properti 'error_layout' dengan persis: "Gambar tidak sesuai dengan permintaan layout, buat layout baru".
-3. Jika layout SESUAI, isi 'is_layout_sesuai' dengan true, dan lakukan ekstraksi bidang berikut ke dalam objek 'data':
-${JSON.stringify(targetFields.map((f: any) => `${f.key} (${f.label})`), null, 2)}
+                    Catatan Pengolahan Nilai (WAJIB DIPATUHI):
+                    - Format Tanggal: Wajib "DD MMM YYYY" (Contoh: "23 Des 2023" atau "04 Jun 2026").
+                    - Bersihkan spasi dan tanda minus (-) pada No.HP atau No.Rekening.
+                    - Jika nomor referensi tidak ditemukan, isi dengan string acak 10 karakter alfanumerik.
 
-Catatan Pengolahan Nilai:
-- Format Tanggal: Wajib "DD MMM YYYY" (Contoh: "23 Des 2023").
-- Jika nomor referensi tidak ditemukan pada struk digital yang valid, isi dengan string acak 10 karakter alfanumerik.
-- Bersihkan spasi dan tanda minus (-) pada No.HP atau No.Rekening.`;
+                    ⚠️ ATURAN KETAT UNTUK NOMINAL / ANGKA ANGURAN:
+                    - Hati-hati dengan nominal uang! Periksa baik-baik posisi titik (.) dan koma (,).
+                    - Jika ada angka desimal di akhir seperti ",00" atau ".00" (sen), ABAIKAN dan JANGAN masukkan ke dalam angka utama. 
+                    - Contoh: "14,500,000.00" atau "14.500.000.00" atau "Rp 1.450.000.000 (jika 3 nol terakhir adalah sen)" HARUS diekstrak menjadi "14500000" (Empat Belas Juta Lima Ratus Ribu).
+                    - Pastikan hasil akhir nominal HANYA BERUPA ANGKA MURNI tanpa simbol mata uang (jangan ada Rp, IDR) dan sesuaikan dengan nilai riil transfernya (bukan nilai sen).`;
 
     const contents = [
       { 

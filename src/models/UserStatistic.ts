@@ -134,7 +134,7 @@ export async function getUserDashboardStats({
     currentLayout = await prisma.layout.count({
       where: {
         userId: userId,
-        ...(startDate && { createdAt: { gte: startDate } }),
+        // ...(startDate && { createdAt: { gte: startDate } }),
       },
     });
   } else {
