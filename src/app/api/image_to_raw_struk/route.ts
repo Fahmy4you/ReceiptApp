@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     ];
 
     let lastError;
-    
+
     for (const modelName of availableModels) {
       try {
         console.log(`Mencoba model dengan Schema: ${modelName}`);
@@ -109,15 +109,18 @@ export async function POST(req: Request) {
           contents: contents,
           config: {
             responseMimeType: "application/json",
-            responseSchema: responseSchema, // <--- Memaksa AI mengikuti struktur JSON buatan kita
+            responseSchema: responseSchema,
           }
         });
 
-        if (!result || !result.text) throw new Error("Response tidak valid");
+        // 1. Jika response kosong, lemparkan error agar ditangkap oleh catch internal loop ini
+        if (!result || !result.text) {
+          throw new Error(`Response dari ${modelName} tidak valid atau kosong`);
+        }
         
         const parsedResult = JSON.parse(result.text);
 
-        // 4. Intersepsi di Backend: Jika AI mendeteksi layout tidak cocok, langsung kembalikan error kesukaanmu
+        // 4. Intersepsi di Backend: Jika AI mendeteksi layout tidak cocok
         if (parsedResult.is_layout_sesuai === false || parsedResult.error_layout) {
           return NextResponse.json({ 
             success: false,
@@ -132,6 +135,7 @@ export async function POST(req: Request) {
           } catch {}
         }
 
+        // Jika berhasil sampai sini, langsung return dan hentikan fungsi (berhasil)
         return NextResponse.json({ 
           success: true, 
           extractedData: parsedResult.data, 
@@ -139,14 +143,19 @@ export async function POST(req: Request) {
         });
         
       } catch (error: any) {
-        lastError = error;
-        if (error.status === 429) {
-          console.warn(`Model ${modelName} limit tercapai, mencoba cadangan...`);
-          continue;
-        }
-        throw error;
+        // Simpan error terakhir untuk dilacak jika semua model gagal
+        lastError = error; 
+        
+        // Tampilkan log error di server agar kamu tahu model mana yang bermasalah dan kenapa
+        console.warn(`⚠️ Model ${modelName} gagal memproses. Error: ${error.message || error}`);
+        
+        // PENTING: Jangan di-throw! Gunakan continue agar looping tetap berjalan ke model berikutnya
+        continue; 
       }
     }
+
+    // Jika kode sampai ke titik ini, artinya seluruh model di dalam array `availableModels` telah dicoba dan SEMUANYA GAGAL
+    throw lastError;
 
     throw lastError;
 
