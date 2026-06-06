@@ -79,46 +79,55 @@ export const formatDateIndo = (
 export const formatReceiptDate = (dateParam: string | Date | null | undefined): string => {
   if (!dateParam) return '-';
 
-  let targetDate: Date;
-
-  // 1. Deteksi jika parameter yang dikirim adalah Objek Date murni
+  // 1. Jika sudah berupa Objek Date murni, langsung format
   if (dateParam instanceof Date) {
-    targetDate = dateParam;
-  } else {
-    // Jika berupa string, bersihkan space atau karakter jam sisa (misal sisa format ISO)
-    const cleanDateStr = String(dateParam).trim().split(' ')[0];
-    targetDate = new Date(cleanDateStr);
+    return convertDateToReceiptFormat(dateParam);
   }
 
-  // 2. Validasi apakah objek Date tersebut valid (mencegah "Invalid Date")
+  const originStr = String(dateParam).trim();
+
+  // 2. Jika string sudah berformat "DD MMM YYYY" (Ada teks bulan seperti "Jun", "Des", dll)
+  // Langsung kembalikan string aslinya agar tidak dirusak oleh native Date parser
+  const hasMonthName = /[a-zA-Z]/.test(originStr);
+  if (hasMonthName) {
+    return originStr; 
+  }
+
+  // 3. Coba parsing string standar (seperti format ISO atau YYYY-MM-DD HH:mm:ss)
+  // Ambil teks tanggalnya saja sebelum spasi (memisahkan komponen jam jika ada)
+  const datePartOnly = originStr.split(' ')[0];
+  let targetDate = new Date(datePartOnly);
+
+  // 4. Jika native parsing gagal atau menghasilkan Invalid Date, gunakan fallback manual
   if (isNaN(targetDate.getTime())) {
-    // Fallback jika parsing native gagal, coba lakukan pemisahan manual strip (-) khusus format kaku YYYY-MM-DD
-    const parts = String(dateParam).split(' ')[0].split('-');
+    const parts = datePartOnly.split('-');
     if (parts.length === 3) {
       const year = parseInt(parts[0], 10);
       const monthIndex = parseInt(parts[1], 10) - 1;
       const day = parseInt(parts[2], 10);
       targetDate = new Date(year, monthIndex, day);
-      if (isNaN(targetDate.getTime())) return String(dateParam);
+      
+      if (isNaN(targetDate.getTime())) return originStr;
     } else {
-      return String(dateParam); // Kembalikan string asli jika benar-benar buntu
+      return originStr; // Kembalikan string asli jika format tidak dikenali
     }
   }
 
-  // 3. Ambil data tanggal, bulan, dan tahun dari objek Date
+  return convertDateToReceiptFormat(targetDate);
+};
+
+// Fungsi pembantu (helper) internal untuk menyusun string sesuai format pesanan struk Anda
+const convertDateToReceiptFormat = (targetDate: Date): string => {
   const day = targetDate.getDate();
   const monthIndex = targetDate.getMonth();
   const year = targetDate.getFullYear();
 
-  // Array nama bulan singkatan sesuai pesanan struk kustom kamu
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
     'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
   ];
 
   const monthName = months[monthIndex] || String(monthIndex + 1);
-  
-  // Memastikan format tanggal selalu 2 digit angka (misal: 05)
   const formattedDay = day < 10 ? `0${day}` : `${day}`;
 
   return `${formattedDay} ${monthName} ${year}`;

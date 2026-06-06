@@ -1,7 +1,7 @@
 import PageManualStrukClient from "@/client/PageManualStrukClient";
 import LoadingScreenSkeleton from "@/components/Loading";
 import { auth } from "@/lib/auth";
-import { exampleLayoutData } from "@/lib/constanta";
+import { DEFAULT_SETTINGS_FIRST_LOGIN, exampleLayoutData } from "@/lib/constanta";
 import { SettingsData } from "@/lib/types";
 import { getAllLayouts } from "@/models/Layout";
 import { getSettingByUserId } from "@/models/Settings";
@@ -18,7 +18,7 @@ export default async function App() {
     layoutData = await getAllLayouts(); 
     settings = await getSettingByUserId();
   }
-  const settingsData = settings ? settings.data : null;
+  const settingsData = settings ? settings.data : DEFAULT_SETTINGS_FIRST_LOGIN;
 
   return (
       <Suspense fallback={<LoadingScreenSkeleton/>}>

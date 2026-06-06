@@ -251,7 +251,6 @@ const PreviewPage: FC<PreviewPageProps> = ({
         const key = normalizeKey(element.label);
         const hasValue = formData[key] != undefined && formData[key] != null && formData[key] != '' && formData[key] != "null";
         const rawValue = hasValue ? formData[key] : '-';
-        // console.log(`Rendering input_text for key: ${key}, rawValue: ${rawValue}`);
 
         const isCurrency = 
           element.dataType === 'Currency' || 

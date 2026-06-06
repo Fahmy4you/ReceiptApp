@@ -157,8 +157,6 @@ export async function POST(req: Request) {
     // Jika kode sampai ke titik ini, artinya seluruh model di dalam array `availableModels` telah dicoba dan SEMUANYA GAGAL
     throw lastError;
 
-    throw lastError;
-
   } catch (error: any) {
     console.error("Final Error Vision:", error);
     return NextResponse.json({ error: error.message || "Gagal memproses" }, { status: 500 });
