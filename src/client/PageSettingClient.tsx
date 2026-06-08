@@ -3,6 +3,7 @@ import Toast from '@/components/Toast';
 import { usePrinter } from '@/context/PrinterContext';
 import { useTheme } from '@/context/ThemeContext';
 import { AdminRange, SettingsData } from '@/lib/types';
+import { upsertSettingsAction } from '@/models/Settings';
 import { useSession } from 'next-auth/react';
 import { useEffect, useRef, useState } from 'react';
 import { FiAlertCircle } from 'react-icons/fi';
@@ -202,7 +203,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
 
         if (!uploadRes.ok) {
           const errorData = await uploadRes.json();
-          throw new Error(errorData.error || "Gagal upload logo");
+          throw new Error("Gagal upload logo coba lagi");
         }
 
         const uploadData = await uploadRes.json();
@@ -225,18 +226,18 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
         }
       };
 
-    //   const result = await upsertSettingsAction({ data: finalJson });
+      const result = await upsertSettingsAction({ data: finalJson });
 
-    //   if (result.success) {
-    //     setToast({ 
-    //       type: 'success', 
-    //       title: 'Success', 
-    //       message: "Pengaturan berhasil disimpan dan file lama telah dibersihkan!" 
-    //     });
-    //     setLogoPreview(finalLogoPath); 
-    //   } else {
-    //     throw new Error(result.error);
-    //   }
+      if (result.success) {
+        setToast({ 
+          type: 'success', 
+          title: 'Success', 
+          message: "Pengaturan berhasil disimpan dan file lama telah dibersihkan!" 
+        });
+        setLogoPreview(finalLogoPath); 
+      } else {
+        throw new Error(result.error);
+      }
 
     } catch (error: any) {
       setToast({ 
