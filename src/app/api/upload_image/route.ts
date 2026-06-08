@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, chmod } from "fs/promises";
 import path from "path";
 import { CONFIG_UPLOAD_IMAGES } from "@/lib/constanta";
 import { cookies } from "next/headers";
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     const filePath = path.join(uploadDir, finalFileName);
 
     await writeFile(filePath, buffer);
+    await chmod(filePath, 0o644);
 
     return NextResponse.json({ 
       path: `${relativePath}/${finalFileName}`,

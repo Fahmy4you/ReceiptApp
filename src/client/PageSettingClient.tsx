@@ -126,6 +126,12 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const maxSize = 2 * 1024 * 1024;
+      if (file.size > maxSize) {
+        setToast({ type: 'error', title: 'Error', message: "File terlalu besar! Maksimal 2MB" });
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => setLogoPreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -203,7 +209,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
 
         if (!uploadRes.ok) {
           const errorData = await uploadRes.json();
-          throw new Error("Gagal upload logo coba lagi");
+          throw new Error(errorData.error || "Gagal Upload Logo");
         }
 
         const uploadData = await uploadRes.json();
