@@ -3,6 +3,4 @@
    - Network:      http://178.83.188.240:3000
 
  ✓ Starting...
- ✓ Ready in 1095ms
-[Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
+ ✓ Ready in 1192ms
