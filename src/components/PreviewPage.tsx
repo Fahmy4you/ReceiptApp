@@ -308,7 +308,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
                 const finalValue = isCurrency ? cleanCurrencyInput(rawText) : rawText;
                 setFormData(prev => ({ ...prev, [key]: finalValue }));
               }}
-              className={`outline-none focus:bg-yellow-50 break-all ${!isStacked && !isCentered ? 'text-right' : ''}`}
+              className={`outline-none focus:bg-yellow-50 wrap-break-word ${!isStacked && !isCentered ? 'text-right' : ''}`}
               style={{ 
                 fontSize: `${element.valueFontSize || 12}px`,
                 fontWeight: weightConstanta[element.valueFontWeight as CustomFontWeight] || 400,

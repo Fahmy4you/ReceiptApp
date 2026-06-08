@@ -112,7 +112,7 @@ export default function PageLayoutListClient({settingsData}: {settingsData: Sett
       setToast({ type: 'error', title: 'Error', message: "Anda harus login untuk mengedit data" });
       return;
     }
-    router.push(`/layout/edit/${id}`);
+    router.push(`/layout/${id}`);
   };
 
   return (

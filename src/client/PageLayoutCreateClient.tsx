@@ -525,7 +525,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                       return (
                         <div 
                           key={el.id} 
-                          className={`info-row flex ${isStacked ? 'flex-col' : 'justify-between items-baseline'} ${isCentered ? 'text-center justify-center' : ''}`} 
+                          className={`info-row wrap-break-word flex ${isStacked ? 'flex-col' : 'justify-between items-baseline'} ${isCentered ? 'text-center justify-center' : ''}`} 
                           style={{ 
                             color: el.color, 
                             border: el.hasBorder ? `2px solid ${el.color}` : 'none', 
@@ -537,7 +537,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                         >
                           {el.showLabel && el.label && (
                             <span 
-                              className={`uppercase ${isStacked ? 'text-[0.85em]' : 'pr-[5px]'}`}
+                              className={`uppercase wrap-break-word ${isStacked ? 'text-[0.85em]' : 'pr-[5px]'}`}
                               style={{ 
                                 fontSize: `${el.labelFontSize}px`,
                                 fontWeight: weightConstanta[el.labelFontWeight] || 400, // Terpisah
@@ -548,7 +548,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                             </span>
                           )}
                           <span 
-                            className={`leading-tight break-all ${!isStacked && !isCentered ? 'text-right' : ''}`}
+                            className={`leading-tight wrap-break-word ${!isStacked && !isCentered ? 'text-right' : ''}`}
                             style={{ 
                               fontSize: `${el.valueFontSize}px`,
                               fontWeight: weightConstanta[el.valueFontWeight] || 400, // Terpisah
@@ -687,7 +687,6 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
             background-position: left top;
           }
 
-          .info-row span:last-child { word-break: break-all; }
           .custom-scrollbar::-webkit-scrollbar { width: 4px; }
           .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
           
