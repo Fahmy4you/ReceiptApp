@@ -90,7 +90,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
         newEl = { id, type: 'text', value: 'Teks Baru', fontSize: 11, fontWeight: 'reg', alignment: 'left', color: '#1a1a1a', marginTop: 5, marginBottom: 5, letterSpacing: 0 } as any;
         break;
       case 'separator':
-        newEl = { id, type: 'separator', style: 'dash', color: '#333333', marginTop: 10, marginBottom: 10, thickness: 2 } as any;
+        newEl = { id, type: 'separator', style: 'dash', color: '#333333', marginTop: 10, marginBottom: 10, thickness: 1.5 } as any;
         break;
     }
     setRows([...rows, newEl]);
@@ -228,12 +228,12 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
       {row.type === 'separator' && (
         <div className="space-y-1 sm:col-span-2">
           <label className="text-[9px] font-bold uppercase text-zinc-400 flex items-center gap-1">
-            <Minus size={10} /> Ketebalan Garis ({row.thickness ?? 2}px)
+            <Minus size={10} /> Ketebalan Garis ({row.thickness ?? 1.5}px)
           </label>
           <input 
-            type="range" min="1" max="10" step="1" 
-            value={row.thickness ?? 2} 
-            onChange={e => updateRow(row.id, { thickness: parseInt(e.target.value) })} 
+            type="range" min="0.1" max="10" step="0.1" 
+            value={row.thickness ?? 1.5} 
+            onChange={e => updateRow(row.id, { thickness: parseFloat(e.target.value) })} 
             className="w-full h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-zinc-700" 
           />
         </div>
@@ -659,8 +659,8 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
         <style jsx global>{`
           .receipt-paper {
             background-color: #ffffff;
-            width: 226px;
-            padding: 25px 12px;
+            width: 219px;
+            padding: 25px 18px;
             position: relative;
             color: #000;
             font-family: '${fontConfig.name}', ${fontConfig.fallback};

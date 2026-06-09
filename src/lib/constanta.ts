@@ -1,4 +1,4 @@
-import { ReceiptElement, SettingsData } from "@/lib/types";
+import { GuideSection, ReceiptElement, SettingsData } from "@/lib/types";
 
 export const DEFAULT_NAME_APP = "StrukApp v1.0"
 export const ID_LICENSE_FREE = "l-free-tier"
@@ -212,12 +212,12 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "showLabel": false,
     "labelLayout": "stacked",
     "exampleValue": "Jl. Raya No. 123, Kota Jakarta",
-    "marginBottom": 6,
+    "marginBottom": 3,
     "labelFontSize": 16,
     "letterSpacing": -1.5,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
-    "valueFontWeight": "reg",
+    "valueFontWeight": "semi",
     "labelLetterSpacing": -1.5,
     "valueLetterSpacing": -1.5
   },
@@ -227,8 +227,8 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "color": "#333333",
     "style": "double_dash",
     "marginTop": 5,
-    "thickness": 2,
-    "marginBottom": 8
+    "thickness": 1.8,
+    "marginBottom": 5
   },
   {
     "id": "5",
@@ -243,9 +243,9 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "labelLayout": "inline",
     "exampleValue": "2026-05-15",
     "marginBottom": 0,
-    "labelFontSize": 15,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
     "valueFontWeight": "reg",
     "labelLetterSpacing": -1.5,
@@ -259,14 +259,14 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "label": "WAKTU",
     "dataType": "Time",
     "position": "default",
-    "marginTop": 2,
+    "marginTop": 0,
     "showLabel": true,
     "labelLayout": "inline",
     "exampleValue": "22:56 WIB",
-    "marginBottom": 6,
-    "labelFontSize": 15,
+    "marginBottom": 0,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
     "valueFontWeight": "reg",
     "labelLetterSpacing": -2,
@@ -278,11 +278,12 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "color": "#333333",
     "style": "dash",
     "marginTop": 8,
-    "marginBottom": 10
+    "thickness": 1.8,
+    "marginBottom": 5
   },
   {
     "id": "3",
-    "gap": 2,
+    "gap": 0,
     "type": "input_text",
     "color": "#1a1a1a",
     "label": "KODE REFERENSI",
@@ -293,10 +294,10 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "showLabel": true,
     "labelLayout": "stacked",
     "exampleValue": "343667317054",
-    "marginBottom": 10,
-    "labelFontSize": 15,
+    "marginBottom": 5,
+    "labelFontSize": 13,
     "letterSpacing": -1,
-    "valueFontSize": 16,
+    "valueFontSize": 15,
     "labelFontWeight": "semi",
     "valueFontWeight": "bold",
     "valueLetterSpacing": -1.5
@@ -307,14 +308,15 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "color": "#333333",
     "style": "dash",
     "marginTop": 5,
-    "marginBottom": 5
+    "thickness": 1.8,
+    "marginBottom": 3
   },
   {
     "id": "8",
     "type": "text",
     "color": "#1a1a1a",
     "value": "DATA PENERIMA",
-    "fontSize": 16,
+    "fontSize": 14,
     "alignment": "center",
     "marginTop": 0,
     "fontWeight": "bold",
@@ -332,10 +334,10 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "showLabel": true,
     "labelLayout": "inline",
     "exampleValue": "BCA",
-    "marginBottom": 2,
-    "labelFontSize": 15,
+    "marginBottom": 0,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
     "valueFontWeight": "reg",
     "labelLetterSpacing": -1,
@@ -353,10 +355,10 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "showLabel": true,
     "labelLayout": "inline",
     "exampleValue": "1234567890",
-    "marginBottom": 2,
-    "labelFontSize": 15,
+    "marginBottom": 0,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
     "valueFontWeight": "reg",
     "labelLetterSpacing": -1,
@@ -374,10 +376,10 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "showLabel": true,
     "labelLayout": "inline",
     "exampleValue": "FAHMY BIMA",
-    "marginBottom": 2,
-    "labelFontSize": 15,
+    "marginBottom": 0,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
     "valueFontWeight": "reg",
     "labelLetterSpacing": -1,
@@ -388,8 +390,9 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "type": "separator",
     "color": "#333333",
     "style": "dash",
-    "marginTop": 10,
-    "marginBottom": 10
+    "marginTop": 5,
+    "thickness": 1.8,
+    "marginBottom": 5
   },
   {
     "id": "12",
@@ -404,9 +407,9 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "labelLayout": "inline",
     "exampleValue": "Rp 1.000.000",
     "marginBottom": 0,
-    "labelFontSize": 15,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
     "valueFontWeight": "reg",
     "labelLetterSpacing": -1,
@@ -421,14 +424,14 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "dataType": "Admin_Fee",
     "position": "default",
     "hasBorder": false,
-    "marginTop": 3,
+    "marginTop": 0,
     "showLabel": true,
     "labelLayout": "inline",
     "exampleValue": "Rp 2.500",
     "marginBottom": 0,
-    "labelFontSize": 15,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "reg",
     "valueFontWeight": "reg",
     "labelLetterSpacing": -1,
@@ -439,8 +442,9 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "type": "separator",
     "color": "#333333",
     "style": "dash",
-    "marginTop": 10,
-    "marginBottom": 10
+    "marginTop": 5,
+    "thickness": 1.8,
+    "marginBottom": 5
   },
   {
     "id": "6d0375d8-79c4-4143-a887-b36ef7d5f1d4",
@@ -456,9 +460,9 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "labelLayout": "inline",
     "exampleValue": "Rp 2.500",
     "marginBottom": 6,
-    "labelFontSize": 15,
+    "labelFontSize": 14,
     "letterSpacing": -1,
-    "valueFontSize": 15,
+    "valueFontSize": 14,
     "labelFontWeight": "bold",
     "valueFontWeight": "bold",
     "labelLetterSpacing": -1,
@@ -470,7 +474,8 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "color": "#333333",
     "style": "double_dash",
     "marginTop": 10,
-    "marginBottom": 30
+    "thickness": 1.8,
+    "marginBottom": 19
   },
   {
     "id": "bdacd5e6-88b1-4f4e-a83e-13afae1fe73f",
@@ -478,7 +483,7 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "color": "#333333",
     "style": "dash",
     "marginTop": 10,
-    "thickness": 2,
+    "thickness": 1.8,
     "marginBottom": 10
   },
   {
@@ -486,21 +491,21 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "type": "text",
     "color": "#1a1a1a",
     "value": "** TRANSAKSI BERHASIL **",
-    "fontSize": 17,
+    "fontSize": 14,
     "alignment": "center",
-    "marginTop": 5,
+    "marginTop": 0,
     "fontWeight": "semi",
     "marginBottom": 0,
-    "letterSpacing": -2.4
+    "letterSpacing": -2
   },
   {
     "id": "964ba5f3-27a5-4b49-8b53-d83bd673dc3d",
     "type": "text",
     "color": "#1a1a1a",
     "value": "SALINAN - VIA STRUKAPP",
-    "fontSize": 16,
+    "fontSize": 14,
     "alignment": "center",
-    "marginTop": 3,
+    "marginTop": 0,
     "fontWeight": "reg",
     "marginBottom": 0,
     "letterSpacing": -1.3
@@ -510,11 +515,11 @@ export const DefaultConfigLayout: ReceiptElement[] = [
     "type": "text",
     "color": "#1a1a1a",
     "value": "TERIMA KASIH",
-    "fontSize": 16,
+    "fontSize": 14,
     "alignment": "center",
-    "marginTop": 3,
+    "marginTop": 0,
     "fontWeight": "bold",
-    "marginBottom": 40,
+    "marginBottom": 0,
     "letterSpacing": 0
   }
 ];
@@ -1286,3 +1291,146 @@ export const exampleHistoryData = [
     updatedAt: new Date()
   },
 ]
+
+export const GUIDE_DATA: GuideSection[] = [
+  {
+    id: "upload-ocr",
+    title: "1. Halaman Upload Struk (OCR)",
+    icon: "📸",
+    description: "Ubah struk bank atau digital menjadi struk pribadi Anda secara otomatis menggunakan teknologi AI Vision.",
+    points: [
+      { title: "Pilihan Layout", desc: "Pilih template struk yang ingin digunakan dari daftar layout yang sudah Anda miliki." },
+      { title: "Upload Gambar", desc: "Unggah foto atau screenshot struk sumber yang ingin dikonversi." },
+      { title: "Checkbox Biaya Admin", desc: "Jika dicentang, sistem akan otomatis menghitung dan menambahkan biaya admin ke dalam total transaksi di Live Preview. Jika tidak dicentang, biaya admin diabaikan." }
+    ]
+  },
+  {
+    id: "manual-input",
+    title: "2. Halaman Buat Struk Manual",
+    icon: "✍️",
+    description: "Buat struk dari nol secara manual tanpa menggunakan scan gambar, memberikan kontrol penuh atas setiap data input.",
+    points: [
+      { title: "Entri Data Manual", desc: "Isi data transaksi secara mandiri berdasarkan struktur layout yang Anda pilih." },
+      { title: "Kalkulasi Biaya Admin", desc: "Sama seperti fitur OCR, Anda dapat mengaktifkan atau menonaktifkan kalkulasi biaya admin melalui checkbox yang tersedia." }
+    ]
+  },
+  {
+    id: "preview-page",
+    title: "3. Halaman Preview Struk & Cetak",
+    icon: "📄",
+    description: "Gerbang terakhir untuk meninjau hasil enkapsulasi data sebelum struk resmi diterbitkan atau dicetak.",
+    points: [
+      { title: "Interactive Editing", desc: "Jika menemukan data yang keliru, Anda dapat langsung mengeditnya dengan cara mengklik nilai (value) teks tersebut di halaman preview." },
+      { title: "Multi-Format Export", desc: "Cetak struk menjadi file gambar berkualitas tinggi, dokumen PDF, atau bagikan langsung ke media sosial." },
+      { title: "Thermal Printer Integration", desc: "Cetak langsung ke printer thermal fisik via Bluetooth. Jika koneksi belum terhubung, tombol cetak printer otomatis dinonaktifkan." }
+    ]
+  },
+  {
+    id: "dashboard",
+    title: "4. Halaman Beranda (Dashboard)",
+    icon: "🏠",
+    description: "Pusat informasi akun, kontrol lisensi, dan pemantauan kuota penggunaan fitur Anda.",
+    points: [
+      { title: "Status Lisensi", desc: "Menampilkan jenis paket aktif Anda saat ini untuk memastikan hak akses fitur." },
+      { title: "ID Referal & Komisi", desc: "Gunakan ID referal unik Anda untuk mengundang rekan sejawat. Dapatkan komisi eksklusif dari setiap pengguna baru yang mendaftar melalui kode Anda." },
+      { title: "Sisa Kuota OCR", desc: "Indikator real-time yang menunjukkan sisa kuota scan struk berbasis AI Vision." },
+      { title: "Google Authentication", desc: "Akses masuk cepat menggunakan Google Sign-In untuk mengamankan dan sinkronisasi seluruh data." }
+    ]
+  },
+  {
+    id: "layout-management",
+    title: "5. Halaman Layout",
+    icon: "📐",
+    description: "Kelola seluruh katalog visual dan struktur template cetakan struk Anda dengan mudah.",
+    points: [
+      { title: "Tabel Kepemilikan", desc: "Daftar lengkap template layout yang Anda miliki beserta informasi detailnya." },
+      { title: "Aksi Cepat", desc: "Fitur Preview (melihat cetakan), Edit (mengubah komponen), dan Hapus untuk membersihkan template lama." },
+      { title: "Kustomisasi Tanpa Batas", desc: "Tombol pembuat layout baru untuk merancang struk kustom sesuai kebutuhan bisnis spesifik Anda." }
+    ],
+    notes: [
+      "Pengguna baru otomatis mendapatkan 2 Layout Default gratis: 'Layout Token Listrik' dan 'Layout E-Wallet' untuk langsung memulai transaksi."
+    ]
+  },
+  {
+    id: "builder-editor",
+    title: "6. Halaman Buat & Edit Layout",
+    icon: "🛠️",
+    description: "Ruang kerja intuitif untuk menyusun anatomi struk. Di sisi kanan, tersedia fitur Live Preview untuk melihat perubahan layout secara instan.",
+    points: [
+      { title: "Identitas Konfigurasi", desc: "Tentukan nama layout sebagai pengenal utama template Anda." }
+    ],
+    subSections: [
+      {
+        title: "Komponen 1: Input Image (Logo)",
+        desc: "Mengatur visualisasi gambar atau logo pada struk.",
+        details: [
+          "Dimensi Kustom: Atur lebar dan tinggi gambar secara presisi.",
+          "Sumber Gambar: Pilih 'Logo Default' (diambil dari pengaturan global) atau 'Upload' langsung gambar baru.",
+          "Fallback System: Jika memilih Logo Default namun data di pengaturan kosong, komponen gambar otomatis disembunyikan.",
+          "Spacing Control: Atur margin atas dan margin bawah untuk keseimbangan visual."
+        ]
+      },
+      {
+        title: "Komponen 2: Input Text (Dinamis & Statis)",
+        desc: "Komponen paling modular untuk menampilkan data tekstual.",
+        details: [
+          "Label & Preview Value: Tentukan nama label dan simulasi nilai untuk melihat tampilan saat data terisi.",
+          "Tipe Data Dinamis: Integrasi otomatis dengan data Settings (Nama Toko, Alamat Toko, dan Biaya Admin).",
+          "Tipe Data Standar: Mendukung String, Number, Currency (Mata Uang), Nominal (Otomatis membaca total transaksi), Referensi (Membaca KODE REF via OCR), serta Date & Time (Mengambil waktu transaksi saat ini secara presisi).",
+          "Tipe Data Total: Menghitung secara otomatis hasil akumulasi antara tipe data total dengan tipe data biaya admin.",
+          "Randomizer Mode: Menghasilkan teks, angka, atau kombinasi campuran acak secara otomatis.",
+          "Smart Fallback: Jika nilai hasil OCR atau input manual kosong (null), sistem otomatis menggantinya dengan tanda hubung (-).",
+          "Tipografi & Gaya: Kustomisasi warna teks, gaya kotak (Box border), ukuran label/value, ketebalan (font-weight), layout bertumpuk (Stack/Atas-Bawah) atau sejajar (Bersandingan).",
+          "Penyelarasan & Jarak: Pilihan teks rata kiri atau tengah, margin vertikal, letter spacing untuk label/value, serta pengaturan celah (gap) antar elemen.",
+          "Opsi Visibilitas: Hidupkan fitur 'Hide Label' untuk menyembunyikan nama label dan hanya memunculkan nilainya saja."
+        ]
+      },
+      {
+        title: "Komponen 3: Text Biasa",
+        desc: "Menampilkan teks statis pelengkap atau catatan kaki (footer).",
+        details: [
+          "Konfigurasi Teks: Kustomisasi isi teks, warna, ukuran font, dan tingkat ketebalan font.",
+          "Align Styles: Penyelarasan paragraf lengkap (Rata Kiri, Rata Kanan, Center, dan Justify).",
+          "Spacing: Kontrol penuh terhadap margin vertikal serta kerapatan antar huruf (letter spacing)."
+        ]
+      },
+      {
+        title: "Komponen 4: Separator (Garis Pembatas)",
+        desc: "Garis batas dekoratif untuk memisahkan kluster informasi struk.",
+        details: [
+          "Varian Gaya: Pilihan garis putus-putus biasa, garis solid tunggal, garis putus-putus ganda, dan garis solid ganda.",
+          "Kustomisasi Fisik: Ubah warna menggunakan kode HEX, atur margin atas/bawah, serta ketebalan border sesuai selera."
+        ]
+      }
+    ]
+  },
+  {
+    id: "history-page",
+    title: "7. Halaman History",
+    icon: "📜",
+    description: "Sistem arsip digital yang mencatat seluruh riwayat pencetakan struk Anda secara teratur.",
+    points: [
+      { title: "Nama Riwayat", desc: "Diambil otomatis dari nama struk yang dibuat. Jika kosong, sistem memberikan teks acak yang unik." },
+      { title: "Layout yang Digunakan", desc: "Informasi mengenai template template yang diaplikasikan pada struk tersebut." },
+      { title: "Metadata Transaksi", desc: "Menampilkan akumulasi nominal total biaya dan tanggal akurat saat struk diterbitkan." },
+      { title: "Aksi Manajemen", desc: "Akses cepat untuk melakukan cetak ulang (re-print) atau menghapus riwayat dari database." }
+    ]
+  },
+  {
+    id: "settings-page",
+    title: "8. Halaman Settings (Inti Konfigurasi)",
+    icon: "⚙️",
+    description: "Pusat kendali utama yang mengatur seluruh logika bisnis dan perilaku sistem aplikasi Anda.",
+    points: [
+      { title: "Profil Toko Utama", desc: "Input Nama Toko dan Alamat Toko Anda. Data ini akan menjadi basis utama bagi komponen bertipe data dinamis." },
+      { title: "Skema Biaya Admin", desc: "Gunakan sistem 'Tetap' (flat rate), rentang biaya (berdasarkan akumulasi total belanja), atau sistem 'Kelipatan' di mana biaya admin meningkat secara berkala seiring bertambahnya harga." },
+      { title: "Master Logo", desc: "Upload logo utama institusi/bisnis Anda untuk dipasang sebagai 'Logo Default' di setiap struktur layout." },
+      { title: "Format Kode Referensi", desc: "Atur penampilan visual nomor referensi secara penuh (Full) atau hanya mengambil beberapa digit terakhir demi estetika." },
+      { title: "Hardware Connection", desc: "Hubungkan perangkat keras printer thermal fisik secara wireless via konektivitas Bluetooth." },
+      { title: "Tema Aplikasi Global", desc: "Ubah atmosfer visual sistem Anda. Pilih Mode Terang (Light Mode), Mode Gelap (Dark Mode berbasis Zinc-950), atau sinkronisasi otomatis dengan preferensi sistem operasi." }
+    ],
+    notes: [
+      "Semua pengaturan awal di halaman ini telah dikonfigurasi dengan setelan default bawaan pabrik saat akun Anda pertama kali dibuat."
+    ]
+  }
+];

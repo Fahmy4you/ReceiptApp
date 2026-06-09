@@ -159,3 +159,22 @@ export interface FeaturesPlan {
   token_perhari_yang_didapat: string;
   maksimal_layout: string;
 }
+
+export interface GuidePoint {
+  title: string;
+  desc: string;
+}
+
+export interface GuideSection {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  points?: GuidePoint[];
+  subSections?: {
+    title: string;
+    desc: string;
+    details: string[];
+  }[];
+  notes?: string[];
+}

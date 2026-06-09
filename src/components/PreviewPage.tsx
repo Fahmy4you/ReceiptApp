@@ -277,6 +277,15 @@ const PreviewPage: FC<PreviewPageProps> = ({
           displayValue = formatReceiptDate(rawValue);
         }
 
+        let textCaseClass = "";
+        if (formData.textCase === 'uppercase') {
+          textCaseClass = "uppercase";
+        } else if (formData.textCase === 'lowercase') {
+          textCaseClass = "lowercase";
+        } else if (formData.textCase === 'normal') {
+          textCaseClass = isCurrency ? "" : "capitalize";
+        }
+
         return (
           <div 
             key={element.id} 
@@ -314,7 +323,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
                 const finalValue = isCurrency ? cleanCurrencyInput(rawText) : rawText;
                 setFormData(prev => ({ ...prev, [key]: finalValue }));
               }}
-              className={`outline-none focus:bg-yellow-50 wrap-break-word ${!isStacked && !isCentered ? 'text-right' : ''}`}
+              className={`outline-none focus:bg-yellow-50 wrap-break-word ${!isStacked && !isCentered ? 'text-right' : ''} ${textCaseClass}`}
               style={{ 
                 fontSize: `${element.valueFontSize || 12}px`,
                 fontWeight: weightConstanta[element.valueFontWeight as CustomFontWeight] || 400,
@@ -331,7 +340,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
 
         if (element.style === 'double_line') {
           return (
-            <div key={element.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 2px)` }}>
+            <div key={element.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 0.5px)` }}>
               <div style={{ borderTop: `${lineThickness} solid ${element.color || '#000'}` }}></div>
               <div style={{ borderTop: `${lineThickness} solid ${element.color || '#000'}` }}></div>
             </div>
@@ -340,7 +349,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
         
         if (element.style === 'double_dash') {
           return (
-            <div key={element.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 2px)` }}>
+            <div key={element.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 0.5px)` }}>
               <div style={{ borderTop: `${lineThickness} dashed ${element.color || '#000'}` }}></div>
               <div style={{ borderTop: `${lineThickness} dashed ${element.color || '#000'}` }}></div>
             </div>
@@ -413,8 +422,8 @@ const PreviewPage: FC<PreviewPageProps> = ({
             ).join('\n')}
               .receipt-paper-thermal {
                 background-color: #ffffff;
-                width: 226px;
-                padding: 25px 12px;
+                width: 219px;
+                padding: 25px 18px;
                 position: relative;
                 color: #000;
                 box-sizing: border-box;

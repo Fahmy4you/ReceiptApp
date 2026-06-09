@@ -138,7 +138,6 @@ export default function PageHomeClient() {
   if(loading) return <LoadingScreenSkeleton/>
   return (
     <>
-      {/* TAB 1: HOME (BERANDA) */}
       <div className="space-y-6 max-w-7xl mx-auto">
         <div className="w-full bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl shadow-blue-950/20 text-white transition-colors duration-300 border border-blue-500/30">
           <div className="absolute right-0 bottom-0 top-0 opacity-[0.08] pointer-events-none flex items-center text-white">
@@ -146,7 +145,7 @@ export default function PageHomeClient() {
           </div>
 
           <div className="relative z-10 w-full flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-2 max-w-xl">
                 <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -157,13 +156,13 @@ export default function PageHomeClient() {
                 </h3>
               </div>
               
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-col lg:flex-row">
                 {session.status == "authenticated" ? (
                   <div className="relative" ref={dropdownRef}>
                     <button 
                       onClick={() => setShowDropdown(!showDropdown)} 
                       title={session.data?.user?.name || "User"}
-                      className="cursor-pointer self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm"
+                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 w-full md:w-auto self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10 shadow-sm"
                     >
                       <FiUser className="w-4 h-4 text-white/80" /> 
                       {session.data?.user?.name && session.data.user.name.length > 10 
@@ -228,11 +227,10 @@ export default function PageHomeClient() {
                   </button>
                 )}
                 <Link 
-                  href=""
-                  target="_blank" 
+                  href="/panduan"
                   rel="noopener noreferrer" 
-                  className="cursor-pointer self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 border border-white/10 shadow-sm">
-                  <FiHelpCircle className="w-4 h-4 text-white/80" /> Chat Bantuan
+                  className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 w-full md:w-auto self-start md:self-auto text-xs font-bold text-white bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10 shadow-sm">
+                  <FiHelpCircle className="w-4 h-4 text-white/80" /> Cara Pemakaian
                 </Link>
               </div>
             </div>
@@ -242,11 +240,6 @@ export default function PageHomeClient() {
                     <Toast toast={toast} setToast={setToast} />
                 </div>
             )}
-
-            {/* ==========================================
-                SECTION 2: CORE METRICS GRID (MATTE BLUR THEME)
-                ========================================== */}
-            {/* Perbaikan: Gunakan min-w-0 di tingkat grid untuk mencegah flex/grid item overflow */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full min-w-0">
               
               {/* Box 1: Status Lisensi */}

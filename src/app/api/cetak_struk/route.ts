@@ -140,17 +140,17 @@ export async function POST(req: Request) {
         });
 
         const browser = await puppeteer.launch({
-            headless: true,
-            timeout: 60000,
+            // 1. Jalankan mode headless (tanpa tampilan UI)
+            headless: true, 
+            
+            // 2. Tambahkan argumen wajib untuk server Linux ini
             args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--disable-crash-reporter',
-                '--disable-extensions',
-                '--no-zygote',
-                '--single-process',
+                '--no-sandbox',                      // WAJIB: Mematikan sandbox Linux (karena jalankan sebagai root/www)
+                '--disable-setuid-sandbox',          // WAJIB: Tambahan pendukung no-sandbox
+                '--disable-dev-shm-usage',           // WAJIB: Memakai folder /tmp, bukan /dev/shm (biar gak crash kekurangan RAM)
+                '--disable-crash-reporter',          // Solusi error crashpad_handler kamu
+                '--disable-extensions',              // Mematikan ekstensi biar lebih ringan
+                '--no-zygote'                        // Mencegah Chrome membuat proses anak yang bikin crash di Linux
             ]
         });
 

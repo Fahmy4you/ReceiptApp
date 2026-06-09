@@ -8,6 +8,9 @@ import { SessionProvider } from "next-auth/react";
 export const metadata: Metadata = {
   title: "StrukApp - Buat Struk Digital dengan Mudah",
   description: "Aplikasi Pembuatan Struk Digital",
+  other: {
+    google: 'notranslate'
+  }
 };
 
 export default function RootLayout({

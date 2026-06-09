@@ -41,6 +41,7 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
     });
     const [strukData, setStrukData] = useState<Record<string, any>>({
         showAdmin: true,
+        textCase: 'normal',
     });
     const session = useSession();
 
@@ -97,10 +98,11 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
               return acc;
             }, {} as Record<string, any>);
 
-        setStrukData({
+        setStrukData((prev) => ({
             ...freshData,
             showAdmin: true,
-        });
+            textCase: prev?.textCase || 'normal',
+        }));
     };
 
     // --- LOGIKA MENANGANI PERGANTIAN LAYOUT TEMPLATE ---
@@ -318,18 +320,71 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
                         </div>
                     </div>
 
-                    {/* SECTION 3: CHECKBOX OPTIONS CARD */}
-                    <div className="bg-white dark:bg-zinc-900 p-4 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-sm w-full">
-                        <Checkbox
-                            label="Tampilkan Biaya Admin pada Preview"
-                            checked={strukData.showAdmin ?? true}
-                            onChange={() => 
-                                setStrukData((prev) => ({
-                                    ...prev, 
-                                    showAdmin: !prev.showAdmin 
-                                }))
-                            }
-                        />
+                    {/* SECTION 3: CHECKBOX & RADIO OPTIONS CARD */}
+                    <div className="bg-white dark:bg-zinc-900 p-4 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-sm w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center">
+                            <Checkbox
+                                label="Tampilkan Biaya Admin pada Preview"
+                                checked={strukData.showAdmin ?? true}
+                                onChange={() => 
+                                    setStrukData((prev) => ({
+                                        ...prev, 
+                                        showAdmin: !prev.showAdmin 
+                                    }))
+                                }
+                            />
+                        </div>
+
+                        {/* Opsi Segmented Control / Radio Button yang Simetris & Rapih */}
+                        <div className="grid grid-cols-3 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl w-full sm:w-64 select-none">
+                            {/* Option 1: UPPERCASE */}
+                            <label className="relative block cursor-pointer text-center">
+                                <input 
+                                    type="radio" 
+                                    name="textCase" 
+                                    value="uppercase"
+                                    checked={strukData.textCase === 'uppercase'}
+                                    onChange={(e) => setStrukData(prev => ({ ...prev, textCase: e.target.value }))}
+                                    className="peer sr-only" 
+                                />
+                                <span className="absolute inset-0 bg-blue-600 rounded-lg opacity-0 peer-checked:opacity-100 transition-all duration-200 shadow-sm shadow-blue-500/20" />
+                                <span className="relative block text-xs font-medium py-2 text-zinc-500 dark:text-zinc-400 peer-checked:text-white uppercase tracking-wider transition-colors duration-200">
+                                    AA
+                                </span>
+                            </label>
+
+                            {/* Option 2: Normal */}
+                            <label className="relative block cursor-pointer text-center">
+                                <input 
+                                    type="radio" 
+                                    name="textCase" 
+                                    value="normal"
+                                    checked={strukData.textCase === 'normal'}
+                                    onChange={(e) => setStrukData(prev => ({ ...prev, textCase: e.target.value }))}
+                                    className="peer sr-only" 
+                                />
+                                <span className="absolute inset-0 bg-blue-600 rounded-lg opacity-0 peer-checked:opacity-100 transition-all duration-200 shadow-sm shadow-blue-500/20" />
+                                <span className="relative block text-xs font-medium py-2 text-zinc-500 dark:text-zinc-400 peer-checked:text-white capitalize transition-colors duration-200">
+                                    Aa
+                                </span>
+                            </label>
+
+                            {/* Option 3: lowercase */}
+                            <label className="relative block cursor-pointer text-center">
+                                <input 
+                                    type="radio" 
+                                    name="textCase" 
+                                    value="lowercase"
+                                    checked={strukData.textCase === 'lowercase'}
+                                    onChange={(e) => setStrukData(prev => ({ ...prev, textCase: e.target.value }))}
+                                    className="peer sr-only" 
+                                />
+                                <span className="absolute inset-0 bg-blue-600 rounded-lg opacity-0 peer-checked:opacity-100 transition-all duration-200 shadow-sm shadow-blue-500/20" />
+                                <span className="relative block text-xs font-medium py-2 text-zinc-500 dark:text-zinc-400 peer-checked:text-white lowercase transition-colors duration-200">
+                                    aa
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
                     {/* SECTION 4: TRIGGER SUBMIT BUTTON */}
