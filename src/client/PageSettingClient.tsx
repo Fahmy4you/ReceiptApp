@@ -231,7 +231,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
           digitLimit: digitLimit
         }
       };
-
+      // console.log(finalJson)
       const result = await upsertSettingsAction({ data: finalJson });
 
       if (result.success) {

@@ -10,7 +10,6 @@ export async function deleteFile(relativePath: string) {
     const absolutePath = path.join(process.cwd(), "public", relativePath);
     await unlink(absolutePath);
     msg = `Berhasil menghapus file: ${relativePath}`;
-    console.log(msg);
     return { success: true, message: "File berhasil dihapus" };
 
   } catch (error: any) {

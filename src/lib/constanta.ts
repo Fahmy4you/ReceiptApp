@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS_FIRST_LOGIN: SettingsData = {
   },
   "shopName": "StrukApp Digital",
   "reference": {
-    "type": "limited",
+    "type": "full",
     "digitLimit": 10
   }
 }

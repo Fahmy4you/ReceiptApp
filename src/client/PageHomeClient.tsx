@@ -104,7 +104,6 @@ export default function PageHomeClient() {
       setLoading(true);
       const statistik = await getUserDashboardStats({filter: "hari"});
       setStats(statistik)
-      console.log(statistik);
     } catch(err) {
       setToast({ type: 'error', title: 'Error', message: "Gagal mendapatkan statistik " + err });
     } finally {

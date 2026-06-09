@@ -537,6 +537,8 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                         >
                           {el.showLabel && el.label && (
                             <span 
+                              suppressHydrationWarning
+                              translate='no'
                               className={`uppercase wrap-break-word ${isStacked ? 'text-[0.85em]' : 'pr-[5px]'}`}
                               style={{ 
                                 fontSize: `${el.labelFontSize}px`,
@@ -548,6 +550,8 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                             </span>
                           )}
                           <span 
+                            suppressHydrationWarning
+                            translate='no'
                             className={`leading-tight wrap-break-word ${!isStacked && !isCentered ? 'text-right' : ''}`}
                             style={{ 
                               fontSize: `${el.valueFontSize}px`,
@@ -585,6 +589,8 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                       return (
                         <div 
                           key={el.id} 
+                          suppressHydrationWarning
+                          translate='no'
                           style={{ 
                             fontSize: `${el.fontSize}px`, 
                             textAlign: el.alignment, 

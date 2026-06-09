@@ -230,6 +230,8 @@ const PreviewPage: FC<PreviewPageProps> = ({
             key={element.id}
             contentEditable
             suppressContentEditableWarning
+            suppressHydrationWarning
+            translate='no'
             style={{
               fontSize: `${element.fontSize || 14}px`,
               textAlign: element.alignment || 'center',
@@ -290,6 +292,8 @@ const PreviewPage: FC<PreviewPageProps> = ({
           >
             {element.showLabel && element.label && (
               <span 
+                suppressHydrationWarning
+                translate='no'
                 className={`uppercase ${isStacked ? 'text-[0.85em]' : 'pr-[5px]'}`}
                 style={{ 
                   fontSize: `${element.labelFontSize || 12}px`,
@@ -303,6 +307,8 @@ const PreviewPage: FC<PreviewPageProps> = ({
             <span 
               contentEditable 
               suppressContentEditableWarning
+              suppressHydrationWarning
+              translate='no'
               onBlur={(e) => {
                 const rawText = e.currentTarget?.innerText || '';
                 const finalValue = isCurrency ? cleanCurrencyInput(rawText) : rawText;
