@@ -52,7 +52,21 @@ export async function POST(req: Request) {
             if (el.type === 'input_image') {
                 let logoSrc = formData.logo_image || formData.logo || el.value || "";
                 if (logoSrc && logoSrc.startsWith('/')) {
-                    logoSrc = `${baseUrl}${logoSrc}`;
+                    const filePath = path.join(process.cwd(), 'public', logoSrc);
+                    if (fs.existsSync(filePath)) {
+                        const fileBuffer = fs.readFileSync(filePath);
+                        const ext = path.extname(logoSrc).toLowerCase();
+                        const mimeMap: Record<string, string> = {
+                            '.png': 'image/png',
+                            '.jpg': 'image/jpeg',
+                            '.jpeg': 'image/jpeg',
+                            '.webp': 'image/webp',
+                        };
+                        const mime = mimeMap[ext] || 'image/png';
+                        logoSrc = `data:${mime};base64,${fileBuffer.toString('base64')}`;
+                    } else {
+                        logoSrc = `${baseUrl}${logoSrc}`;
+                    }
                 }
                 return { 
                     ...baseSpacing, 
