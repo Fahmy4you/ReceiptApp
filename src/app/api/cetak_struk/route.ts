@@ -103,6 +103,8 @@ export async function POST(req: Request) {
                 if(el.dataType == 'Date' && rawValue != '-' && rawValue != '') {
                     rawValue = formatReceiptDate(rawValue);
                 }
+                const currentCase = formData.textCase || 'none'; 
+                const textCaseStyleCss = `text-transform: ${currentCase};`;
 
                 return {
                     ...baseSpacing,
@@ -123,7 +125,8 @@ export async function POST(req: Request) {
                     labelLetterSpacing: el.labelLetterSpacing !== undefined ? el.labelLetterSpacing : 0,
                     valueLetterSpacing: el.valueLetterSpacing !== undefined ? el.valueLetterSpacing : 0,
                     labelFontSize: el.labelFontSize || el.fontSize || 12,
-                    valueFontSize: el.valueFontSize || el.fontSize || 12
+                    valueFontSize: el.valueFontSize || el.fontSize || 12,
+                    textCaseStyle: textCaseStyleCss
                 };
             }
             return null;

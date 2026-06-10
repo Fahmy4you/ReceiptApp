@@ -84,6 +84,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
             setIsPrinterConnected(true);
           }
         } catch (error) {
+          setToast({ type: 'error', title: 'Error', message: "Gagal melakukan auto-reconnect printer" });
           console.error("Gagal melakukan auto-reconnect printer:", error);
         } finally {
           setIsSearching(false);
@@ -109,6 +110,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
       setIsPrinterConnected(true);
       localStorage.setItem('last_printer_name', device.name || 'Printer');
     } catch (e) {
+      setToast({ type: 'error', title: 'Error', message: "Gagal menghubungkan printer coba lagi" });
       console.error(e);
     } finally {
       setIsSearching(false);
@@ -517,7 +519,11 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
               </div>
               <div className="flex items-start gap-3 text-[11px] text-zinc-500 dark:text-zinc-400">
                 <FiAlertCircle size={14} className="text-amber-500 shrink-0" />
-                <p>Gunakan gambar PNG transparan untuk hasil terbaik di mode gelap.</p>
+                <p>Gunakan gambar PNG transparan untuk hasil terbaik</p>
+              </div>
+              <div className="flex items-start gap-3 text-[11px] text-zinc-500 dark:text-zinc-400">
+                <FiAlertCircle size={14} className="text-amber-500 shrink-0" />
+                <p>Maksimal ukuran logo 2mb</p>
               </div>
             </div>
           </div>
@@ -552,7 +558,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
                 <button
                   onClick={isPrinterConnected ? disconnectPrinter : connectPrinter}
                   disabled={isSearching}
-                  className={`w-full py-3.5 rounded-xl font-extrabold flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer ${
+                  className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer ${
                     isPrinterConnected 
                       ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40'
                       : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700'

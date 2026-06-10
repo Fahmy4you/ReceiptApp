@@ -16,107 +16,126 @@ export const printImageToThermal = async (device: any, imageSrc: string) => {
     img.onerror = reject;
   });
 
-  // 2. Setup Canvas dengan Pangkas Margin Aman (Anti Terpotong & Pas di Kertas)
+  // 2. Setup Canvas dengan Pangkas Margin Aman & Potong Padding Atas 20px
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const printWidth = 384; // Standar lebar printer thermal 58mm
+  const printWidth = 384; 
 
   if (!ctx) throw new Error("Gagal membuat konteks canvas.");
 
-  // Menggunakan 20px (kanan-kiri) agar space putih berkurang tanpa memotong text utama
   const cropLeft = 20; 
   const cropRight = 23; 
-  
   const sourceX = cropLeft;
   const sourceWidth = img.width - cropLeft - cropRight;
-  const sourceY = 0;
-  const sourceHeight = img.height;
 
-  // Hitung skala tinggi baru berdasarkan lebar konten yang sudah dipotong
+  const cropTop = 20; 
+  const sourceY = cropTop;
+  const sourceHeight = img.height - cropTop; 
+
   const scale = printWidth / sourceWidth;
   canvas.width = printWidth;
   canvas.height = sourceHeight * scale;
 
-  // Beri background putih penuh pada canvas target
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Gambar ulang dengan memotong area pinggiran secara aman dan merentangkannya ke 384px penuh
   ctx.drawImage(
     img,
-    sourceX, sourceY, sourceWidth, sourceHeight, // Potongan gambar asli (Source)
-    0, 0, canvas.width, canvas.height             // Diregangkan penuh ke Printer (Destination)
+    sourceX, sourceY, sourceWidth, sourceHeight,
+    0, 0, canvas.width, canvas.height
   );
 
-  // 3. Konversi gambar ke format Bitmap 1-bit (Hitam-Putih murni)
+  // 3. Konversi gambar ke format Bitmap 1-bit dengan KONTRAST EKSTRIM
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const pixels = imageData.data;
   const bitmap: number[] = [];
+
+  const THRESHOLD = 180; 
 
   for (let y = 0; y < canvas.height; y++) {
     for (let x = 0; x < canvas.width; x += 8) {
       let byte = 0;
       for (let bit = 0; bit < 8; bit++) {
-        const i = ((y * canvas.width) + (x + bit)) * 4;
-        
-        // Menghitung kegelapan pixel (Luminance)
-        const luminance = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
-        
-        // Jika pixel agak gelap (di bawah 128), anggap sebagai warna hitam (bit 1)
-        if (luminance < 128) {
-          byte |= (0x80 >> bit);
+        const currentX = x + bit;
+        if (currentX < canvas.width) {
+          const i = (y * canvas.width + currentX) * 4;
+          
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const a = pixels[i + 3];
+
+          if (a < 10) {
+            continue;
+          }
+          
+          const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+          
+          if (luminance < THRESHOLD) {
+            byte |= (0x80 >> bit);
+          }
         }
       }
       bitmap.push(byte);
     }
   }
 
-  // 4. Siapkan perintah ESC/POS (Header, Data Gambar, Footer)
+  // 4. Siapkan perintah ESC/POS (Murni standard bawaan kamu yang aman)
   const widthBytes = canvas.width / 8;
   const heightPixels = canvas.height;
 
   const header = new Uint8Array([
-    0x1B, 0x40,             // ESC @ (Inisialisasi printer)
-    0x1D, 0x76, 0x30, 0x00, // GS v 0 (Perintah cetak raster bit image)
+    0x10, 0x14, 0x01,       
+    0x1B, 0x40,             
+    0x1B, 0x61, 0x01,       
+    0x1D, 0x76, 0x30, 0x00, 
     widthBytes & 0xFF, (widthBytes >> 8) & 0xFF, 
     heightPixels & 0xFF, (heightPixels >> 8) & 0xFF 
   ]);
 
   const footer = new Uint8Array([
-    0x1B, 0x64, 0x05, // ESC d 5 (Maju 5 baris kosong setelah cetak)
-    0x1D, 0x56, 0x00  // GS V 0 (Potong kertas, jika printernya mendukung autocutter)
+    0x1B, 0x64, 0x05, 
+    0x1D, 0x56, 0x00  
   ]);
 
-  // Gabungkan semua data menjadi satu kesatuan array byte
   const combinedData = new Uint8Array(header.length + bitmap.length + footer.length);
   combinedData.set(header);
   combinedData.set(new Uint8Array(bitmap), header.length);
   combinedData.set(footer, header.length + bitmap.length);
 
   // =========================================================================
-  // 5. PROSES PENGIRIMAN DATA - THROTTLE PER BARIS GAMBAR (CEPAT & ANTI HANCUR)
+  // ⚡ 5. PROSES TRANSMISI HIGH-SPEED & ANTI-CRASH (OPTIMIZED THROTTLE)
   // =========================================================================
   const chunkSize = 20; 
-  const bytesPerLine = 48; 
+  const bytesPerLine = 48; // Lebar 1 baris kertas printer 58mm (384px / 8)
   let bytesSentInCurrentLine = 0;
 
-  for (let i = 0; i < combinedData.length; i += chunkSize) {
-    const chunk = combinedData.slice(i, i + chunkSize);
-    
-    if (characteristic.properties.writeWithoutResponse) {
+  // Optimasi: Cek properti di luar loop biar gak ngetes kondisi ribuan kali
+  if (characteristic.properties.writeWithoutResponse) {
+    for (let i = 0; i < combinedData.length; i += chunkSize) {
+      const chunk = combinedData.slice(i, i + chunkSize);
       await characteristic.writeValueWithoutResponse(chunk);
+      
       bytesSentInCurrentLine += chunk.length;
       
+      // Begitu data 1 baris selesai dikirim, kasih jeda napas tipis
       if (bytesSentInCurrentLine >= bytesPerLine) {
-        // Jeda 8ms memberi waktu hardware membakar kertas per baris horizontal
-        await new Promise(resolve => setTimeout(resolve, 8)); 
+        // KUNCI: Kita pangkas dari 8ms menjadi 3ms. 
+        // Ini waktu paling pas (sweet spot) biar printer gak overload tapi cetakan jalan mulus!
+        await new Promise(resolve => setTimeout(resolve, 3)); 
         bytesSentInCurrentLine = 0;
       }
-    } else {
+    }
+  } else {
+    // Jalur aman kalau printer minta feedback (with response)
+    for (let i = 0; i < combinedData.length; i += chunkSize) {
+      const chunk = combinedData.slice(i, i + chunkSize);
       await characteristic.writeValue(chunk);
     }
   }
 
-  // Catat aktivitas setelah proses cetak selesai
   await trackUserPrintActivity('PRINT');
 };

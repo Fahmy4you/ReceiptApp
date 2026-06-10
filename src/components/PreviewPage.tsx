@@ -5,9 +5,9 @@ import {
   LuImage as LucideImage, 
   LuPrinter as Printer, 
   LuLoader as Loader2, 
-  LuBluetoothOff as BluetoothOff, 
   LuFileText as FileText,
-  LuShare2 as ShareIcon
+  LuShare2 as ShareIcon,
+  LuBluetooth
 } from 'react-icons/lu';
 import { calculateReceiptTotal, cleanCurrencyInput, formatIDR, formatReceiptDate } from '@/lib/Helpers';
 import { usePrinter } from '@/context/PrinterContext';
@@ -44,7 +44,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
   setIsGenerating,
   settings
 }) => {
-  const { printerDevice } = usePrinter();
+  const { printerDevice, setPrinterDevice, isPrinterConnected, setIsPrinterConnected } = usePrinter();
   const session = useSession();
   const isAuthenticated = session.status === "authenticated";
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
@@ -66,10 +66,45 @@ const PreviewPage: FC<PreviewPageProps> = ({
     }
   };
 
-  const handlePrintFisik = async () => {
-    if (!printerDevice) return;
-
+  const connectPrinter = async () => {
     setIsGenerating(true);
+    try {
+      const device = await (navigator as any).bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+      });
+      await device.gatt.connect();
+      setPrinterDevice(device);
+      setIsPrinterConnected(true);
+      localStorage.setItem('last_printer_name', device.name || 'Printer');
+      return device;
+    } catch (e) {
+      setToast({ type: 'error', title: 'Error', message: "Gagal menghubungkan printer coba lagi" });
+      console.error(e);
+      return null;
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handlePrintFisik = async () => {
+    setIsGenerating(true);
+    if (!printerDevice) {
+      try {
+        const printer = await connectPrinter();
+        if(!printer) {
+          setToast({ type: 'error', title: 'Error', message: "Gagal menghubungkan printer coba lagi" });
+          setIsGenerating(false)
+          return;
+        }
+      } catch(err) {
+        setToast({ type: 'error', title: 'Error', message: "Gagal menghubungkan printer coba lagi" });
+        console.error(err)
+        setIsGenerating(false)
+        return;
+      }
+    };
+
     try {
       const response = await fetch('/api/cetak_struk', { 
         method: 'POST',
@@ -503,7 +538,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
               <ActionButton 
                 onClick={handlePrintFisik} 
                 loading={isGenerating} 
-                icon={printerDevice ? <Printer/> : <BluetoothOff/>} 
+                icon={printerDevice ? <Printer/> : <LuBluetooth/>} 
                 title="Cetak Langsung" 
                 desc={printerDevice ? "Kirim ke Printer Thermal" : "Printer belum terhubung"}
                 color={printerDevice ? "green" : "gray"}
