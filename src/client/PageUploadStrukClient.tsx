@@ -140,15 +140,50 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const name = e.target.name;
         const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const result = reader.result as string;
-                setPreviews(prev => ({ ...prev, [name]: result }));
-                setFormData(prev => ({ ...prev, [name]: result }));
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const img = new Image();
+            img.src = reader.result as string;
+
+            img.onload = () => {
+                // --- LOGIKA KOMPRESI VIA CANVAS ---
+                const MAX_WIDTH = 1200; // Ukuran aman & pas banget buat dibaca Gemini Vision
+                const MAX_HEIGHT = 1200;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Set kualitas kompresi ke 0.75 (75% kualitas asli, size menyusut drastis)
+                    const compressedBase64 = canvas.toDataURL(file.type, 0.75);
+
+                    // Masukkan hasil kompresi yang super enteng ke State
+                    setPreviews(prev => ({ ...prev, [name]: compressedBase64 }));
+                    setFormData(prev => ({ ...prev, [name]: compressedBase64 }));
+                }
             };
-            reader.readAsDataURL(file);
-        }
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleSubmit = async (): Promise<void> => {
