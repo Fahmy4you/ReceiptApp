@@ -39,7 +39,7 @@ export const printImageToThermal = async (device: any, imageSrc: string) => {
   const scale = printWidth / sourceWidth;
   const contentHeight = sourceHeight * scale;
   
-  const marginBottom = 60; 
+  const marginBottom = 30; 
 
   canvas.width = printWidth;
   // Kurangi tinggi total canvas dengan potongan paksa agar ukuran kertas pas
@@ -113,22 +113,29 @@ export const printImageToThermal = async (device: any, imageSrc: string) => {
 
   // Transmisi data (Kunci 8ms lokal kamu)
   const chunkSize = 20; 
-  const bytesPerLine = 48; 
-  let bytesSentInCurrentLine = 0;
+  let totalBytesSent = 0;
 
   for (let i = 0; i < combinedData.length; i += chunkSize) {
     const chunk = combinedData.slice(i, i + chunkSize);
+    
     if (characteristic.properties.writeWithoutResponse) {
       await characteristic.writeValueWithoutResponse(chunk);
-      bytesSentInCurrentLine += chunk.length;
-      if (bytesSentInCurrentLine >= bytesPerLine) {
-        await new Promise(resolve => setTimeout(resolve, 8)); 
-        bytesSentInCurrentLine = 0;
+      totalBytesSent += chunk.length;
+      
+      // 🛠️ TRIK UTAMA: Setiap 120 bytes data gambar terkirim (sekitar 2.5 baris cetak),
+      // beri jeda istirahat 30-40ms agar dinamo printer bisa ngeprint dulu.
+      if (totalBytesSent >= 120) {
+        await new Promise(resolve => setTimeout(resolve, 35)); 
+        totalBytesSent = 0; // Reset counter
       }
     } else {
+      // Jika mode write biasa, beri jeda standar 15ms karena gatt.connect butuh sinkronisasi
       await characteristic.writeValue(chunk);
+      await new Promise(resolve => setTimeout(resolve, 15));
     }
   }
 
+  // Kasih jeda final sebelum tracking activity biar koneksi bener-bener beres
+  await new Promise(resolve => setTimeout(resolve, 500));
   await trackUserPrintActivity('PRINT');
 };

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         }
         
         const body = await req.json();
-        let { formData, config, format = 'pdf' } = body;
+        let { formData, config, format = 'pdf', print = false } = body;
 
         if(format == 'png') {
             await trackUserPrintActivity('IMAGE');
@@ -147,7 +147,11 @@ export async function POST(req: Request) {
         }).filter(Boolean);
 
         // 2. Load & Compile Template
-        const templatePath = path.join(process.cwd(), 'src', 'templates', 'struk_template.html');
+        let templatePath = path.join(process.cwd(), 'src', 'templates', 'struk_template.html');
+        if(print == true) {
+            console.log("aku memakai ini")
+            templatePath = path.join(process.cwd(), 'src', 'templates', 'struk_template_print.html');
+        }
         const templateSource = fs.readFileSync(templatePath, 'utf-8');
         const template = Handlebars.compile(templateSource);
         

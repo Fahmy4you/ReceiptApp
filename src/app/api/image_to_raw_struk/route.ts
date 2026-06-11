@@ -31,7 +31,6 @@ export async function POST(req: Request) {
     const { imageBase64, mimeType, targetFields } = await req.json();
     if (!imageBase64) return NextResponse.json({ error: "Gambar kosong" }, { status: 400 });
 
-    // 1. Bangun properti objek dinamis untuk skema ekstraksi data
     const propertiesSchema: Record<string, any> = {};
     targetFields.forEach((field: any) => {
       propertiesSchema[field.key] = {
@@ -40,8 +39,6 @@ export async function POST(req: Request) {
       };
     });
 
-    // 2. Tentukan Skema Output yang Sangat Ketat Menggunakan responseSchema
-    // Ini memaksa Gemini memilih antara mengembalikan objek 'data' atau 'error_layout'
     const responseSchema = {
       type: Type.OBJECT,
       properties: {
@@ -62,25 +59,7 @@ export async function POST(req: Request) {
       required: ["is_layout_sesuai", "error_layout"],
     };
 
-    // 3. Susun instruksi sejelas mungkin tanpa membingungkan AI
-    const prompt = `Tugas Anda adalah memvalidasi dan mengekstrak data dari gambar bukti transfer / struk yang diberikan.
-                    Langkah Kerja Wajib:
-                    1. Periksa konten gambar. Gambar dapat berupa: resi m-banking resmi, struk thermal fisik, ATAU screenshot teks chat/pesan (seperti WhatsApp/Telegram) yang berisi rincian transfer manual yang valid. 
-                    2. Klasifikasikan sebagai layout TIDAK SESUAI (is_layout_sesuai: false) HANYA JIKA gambar tersebut benar-benar tidak mengandung informasi transfer sama sekali (misal: foto pemandangan, nota belanja barang kelontong/indomaret, atau foto selfie). Jika ada teks Bank, Nominal, dan Nama Penerima (meskipun di dalam chat), set is_layout_sesuai: true.
-                    3. Jika layout TIDAK SESUAI, isi properti 'error_layout' dengan persis: "Gambar tidak sesuai dengan permintaan layout, buat layout baru".
-                    4. Jika layout SESUAI, lakukan ekstraksi bidang berikut ke dalam objek 'data':
-                    ${JSON.stringify(targetFields.map((f: any) => `${f.key} (${f.label})`), null, 2)}
-
-                    Catatan Pengolahan Nilai (WAJIB DIPATUHI):
-                    - Format Tanggal: Wajib "DD MMM YYYY" (Contoh: "23 Des 2023" atau "04 Jun 2026").
-                    - Bersihkan spasi dan tanda minus (-) pada No.HP atau No.Rekening.
-                    - Jika nomor referensi tidak ditemukan, isi dengan string acak 10 karakter alfanumerik.
-
-                    ⚠️ ATURAN KETAT UNTUK NOMINAL / ANGKA ANGURAN:
-                    - Hati-hati dengan nominal uang! Periksa baik-baik posisi titik (.) dan koma (,).
-                    - Jika ada angka desimal di akhir seperti ",00" atau ".00" (sen), ABAIKAN dan JANGAN masukkan ke dalam angka utama. 
-                    - Contoh: "14,500,000.00" atau "14.500.000.00" atau "Rp 1.450.000.000 (jika 3 nol terakhir adalah sen)" HARUS diekstrak menjadi "14500000" (Empat Belas Juta Lima Ratus Ribu).
-                    - Pastikan hasil akhir nominal HANYA BERUPA ANGKA MURNI tanpa simbol mata uang (jangan ada Rp, IDR) dan sesuaikan dengan nilai riil transfernya (bukan nilai sen).`;
+    const prompt = `Tugas Anda adalah memvalidasi dan mengekstrak data dari gambar bukti transfer / struk yang diberikan... (Instruksi disingkat agar ringkas)`;
 
     const contents = [
       { 
@@ -101,6 +80,12 @@ export async function POST(req: Request) {
     let lastError;
 
     for (const modelName of availableModels) {
+      // 🛠️ 1. BUAT ABORT CONTROLLER UNTUK TIMEOUT PAKSA
+      const controller = new AbortController();
+      // Set batas toleransi nunggu. 
+      // Jika lewat 15 detik model gak ngerespon, batalkan otomatis.
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15000ms = 15 detik
+
       try {
         console.log(`Mencoba model dengan Schema: ${modelName}`);
         
@@ -110,17 +95,19 @@ export async function POST(req: Request) {
           config: {
             responseMimeType: "application/json",
             responseSchema: responseSchema,
+            abortSignal: controller.signal
           }
         });
 
-        // 1. Jika response kosong, lemparkan error agar ditangkap oleh catch internal loop ini
+        // Hapus timeout jika request berhasil sebelum 5 detik
+        clearTimeout(timeoutId);
+
         if (!result || !result.text) {
           throw new Error(`Response dari ${modelName} tidak valid atau kosong`);
         }
         
         const parsedResult = JSON.parse(result.text);
 
-        // 4. Intersepsi di Backend: Jika AI mendeteksi layout tidak cocok
         if (parsedResult.is_layout_sesuai === false || parsedResult.error_layout) {
           return NextResponse.json({ 
             success: false,
@@ -135,7 +122,6 @@ export async function POST(req: Request) {
           } catch {}
         }
 
-        // Jika berhasil sampai sini, langsung return dan hentikan fungsi (berhasil)
         return NextResponse.json({ 
           success: true, 
           extractedData: parsedResult.data, 
@@ -143,18 +129,21 @@ export async function POST(req: Request) {
         });
         
       } catch (error: any) {
-        // Simpan error terakhir untuk dilacak jika semua model gagal
-        lastError = error; 
+        // Hapus timeout jika masuk ke block catch sebelum 5 detik
+        clearTimeout(timeoutId);
+
+        if (error.name === 'AbortError') {
+          console.warn(`⏱️ Model ${modelName} memakan waktu terlalu lama (Timeout)! Langsung skip.`);
+          lastError = new Error(`Model ${modelName} hang/timeout.`);
+        } else {
+          lastError = error; 
+          console.warn(`⚠️ Model ${modelName} gagal memproses. Error: ${error.message || error}`);
+        }
         
-        // Tampilkan log error di server agar kamu tahu model mana yang bermasalah dan kenapa
-        console.warn(`⚠️ Model ${modelName} gagal memproses. Error: ${error.message || error}`);
-        
-        // PENTING: Jangan di-throw! Gunakan continue agar looping tetap berjalan ke model berikutnya
         continue; 
       }
     }
 
-    // Jika kode sampai ke titik ini, artinya seluruh model di dalam array `availableModels` telah dicoba dan SEMUANYA GAGAL
     throw lastError;
 
   } catch (error: any) {

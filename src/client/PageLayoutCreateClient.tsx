@@ -543,7 +543,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                               style={{ 
                                 fontSize: `${el.labelFontSize}px`,
                                 fontWeight: weightConstanta[el.labelFontWeight] || 400, // Terpisah
-                                letterSpacing: `${el.labelLetterSpacing ?? 0}px` // Terpisah
+                                letterSpacing: `${el.labelLetterSpacing ?? 0}px`, // Terpisah
                               }}
                             >
                               {el.label}
@@ -556,7 +556,8 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                             style={{ 
                               fontSize: `${el.valueFontSize}px`,
                               fontWeight: weightConstanta[el.valueFontWeight] || 400, // Terpisah
-                              letterSpacing: `${el.valueLetterSpacing ?? 0}px` // Terpisah
+                              letterSpacing: `${el.valueLetterSpacing ?? 0}px`, // Terpisah
+                              wordBreak: "break-word"
                             }}
                           >
                             {generatePlaceholder(el)}
@@ -601,7 +602,8 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                             border: el.hasBorder ? `2px solid ${el.color}` : 'none', 
                             color: el.color, 
                             lineHeight: 'tight',
-                            letterSpacing: lSpacing
+                            letterSpacing: lSpacing,
+                            wordBreak: "break-word"
                           }} 
                           className="uppercase"
                         >
@@ -615,7 +617,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                       
                       if (el.style === 'double_line') {
                         return (
-                          <div key={row.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 2px)` }}>
+                          <div key={row.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 0.5px)` }}>
                             <div style={{ borderTop: `${lineThickness} solid ${el.color}` }} />
                             <div style={{ borderTop: `${lineThickness} solid ${el.color}` }} />
                           </div>
@@ -624,7 +626,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                       
                       if (el.style === 'double_dash') {
                         return (
-                          <div key={row.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 2px)` }}>
+                          <div key={row.id} className="w-full flex flex-col justify-between" style={{ marginTop: mTop, marginBottom: mBottom, height: `calc(${lineThickness} * 2 + 0.5px)` }}>
                             <div style={{ borderTop: `${lineThickness} dashed ${el.color}` }} />
                             <div style={{ borderTop: `${lineThickness} dashed ${el.color}` }} />
                           </div>

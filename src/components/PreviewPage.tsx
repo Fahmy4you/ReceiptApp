@@ -109,7 +109,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
       const response = await fetch('/api/cetak_struk', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formData, config, format: 'png' })
+        body: JSON.stringify({ formData, config, format: 'png', print: true })
       });
 
       if (!response.ok) throw new Error("Gagal mengambil data dari server");
@@ -276,9 +276,10 @@ const PreviewPage: FC<PreviewPageProps> = ({
               padding: element.hasBorder ? '5px' : '0',
               marginTop: mTop,
               marginBottom: mBottom,
-              letterSpacing: `${element.letterSpacing ?? 0}px`
+              letterSpacing: `${element.letterSpacing ?? 0}px`,
+              wordBreak: "break-word"
             }}
-            className="outline-none focus:bg-yellow-50 uppercase leading-tight"
+            className="outline-none focus:bg-yellow-50 leading-tight"
           >
             {element.value}
           </div>
@@ -342,7 +343,7 @@ const PreviewPage: FC<PreviewPageProps> = ({
                 style={{ 
                   fontSize: `${element.labelFontSize || 12}px`,
                   fontWeight: weightConstanta[element.labelFontWeight as CustomFontWeight] || 400,
-                  letterSpacing: `${element.labelLetterSpacing ?? 0}px`
+                  letterSpacing: `${element.labelLetterSpacing ?? 0}px`,
                 }}
               >
                 {element.label}
@@ -358,11 +359,12 @@ const PreviewPage: FC<PreviewPageProps> = ({
                 const finalValue = isCurrency ? cleanCurrencyInput(rawText) : rawText;
                 setFormData(prev => ({ ...prev, [key]: finalValue }));
               }}
-              className={`outline-none focus:bg-yellow-50 wrap-break-word ${!isStacked && !isCentered ? 'text-right' : ''} ${textCaseClass}`}
+              className={`outline-none focus:bg-yellow-50 ${!isStacked && !isCentered ? 'text-right' : ''} ${textCaseClass}`}
               style={{ 
                 fontSize: `${element.valueFontSize || 12}px`,
                 fontWeight: weightConstanta[element.valueFontWeight as CustomFontWeight] || 400,
-                letterSpacing: `${element.valueLetterSpacing ?? 0}px`
+                letterSpacing: `${element.valueLetterSpacing ?? 0}px`,
+                wordBreak: "break-word"
               }}
             >
               {displayValue}
