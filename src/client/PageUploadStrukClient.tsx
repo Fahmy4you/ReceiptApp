@@ -199,13 +199,62 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
 
         setIsGenerating(true);
         try {
+            let lastTextContext = ""; // Tracker kanggo moco komponen 'text' (DATA PENERIMA / DATA PENGIRIM)
             const fieldsToExtract = config
-                .filter(el => el.type === 'input_text' && !NOT_TASK_AI_TYPE_INPUT.includes(el.dataType || ''))
-                .map(el => ({
-                    label: el.label,
-                    key: normalizeKey(el.label),
+            .map(el => {
+                // 1. Nek ketemu komponen tipe 'text' (Judul Section), simpan teks-e
+                if (el.type == 'text') {
+                lastTextContext = el.value ?? "";
+                return null; // Aja dilebokno target fields ocr
+                }
+                
+                // 2. Proses mung komponen input_text sing kudu diwaca AI
+                if (el.type === 'input_text' && !NOT_TASK_AI_TYPE_INPUT.includes(el.dataType || '')) {
+                const currentContext = lastTextContext.toLowerCase();
+                
+                let prefixKey = "";
+                let contextLabel = "";
+
+                // Cek posisi input iki melu kelompok endi
+                if (currentContext.includes("penerima") || currentContext.includes("tujuan") || currentContext.includes("pelanggan")) {
+                    prefixKey = "penerima_";
+                    contextLabel = "PENERIMA/TUJUAN";
+                } else if (currentContext.includes("pengirim") || currentContext.includes("sumber") || currentContext.includes("bayar")) {
+                    prefixKey = "pengirim_";
+                    contextLabel = "PENGIRIM/SUMBER DANA";
+                }
+
+                // Gawe label sing super detail gae panganane AI
+                let aiLabel = el.label;
+                const lowerLabel = (el.label || "").toLowerCase();
+
+                if (prefixKey === "penerima_") {
+                    if (lowerLabel.includes("bank")) {
+                    aiLabel = "Bank atau Instansi/E-Wallet Tujuan Penerima (Contoh: Shopee Indonesia, ShopeePay, GoPay, OVO. JANGAN ISI BANK PENGIRIM/MANDIRI!)";
+                    } else if (lowerLabel.includes("rek") || lowerLabel.includes("nomor") || lowerLabel.includes("va")) {
+                    aiLabel = "Nomor Rekening atau Nomor Virtual Account (VA) Tujuan Penerima (Contoh: 896085161609088. JANGAN AMBIL REKENING PENGIRIM)";
+                    } else if (lowerLabel.includes("nama")) {
+                    aiLabel = "Nama Rekening/Akun Tujuan Penerima (Contoh: wXXXXXXXXXXXXX3 atau Shopee Indonesia. JANGAN AMBIL HERMAWAN WIDARTA)";
+                    }
+                } else if (prefixKey === "pengirim_") {
+                    if (lowerLabel.includes("nama")) {
+                        aiLabel = "Nama Lengkap Pengirim / Pemilik Sumber Dana (Contoh: HERMAWAN WIDARTA)";
+                    } else if (lowerLabel.includes("bank")) {
+                        aiLabel = "Nama Bank Asal Pengirim Dana (Contoh: Bank Mandiri)";
+                    }
+                }
+
+                return {
+                    // Hasil key dadi unik: 'penerima_bank' ato 'pengirim_nama'
+                    key: `${prefixKey}${normalizeKey(el.label ?? "")}`, 
+                    label: `${aiLabel} [Kelompok: ${contextLabel}]`,
                     dataType: el.dataType
-                }));
+                };
+                }
+                
+                return null;
+            })
+            .filter(Boolean);
 
             const res = await fetch("/api/image_to_raw_struk", {
                 method: "POST",
@@ -218,7 +267,8 @@ const PageUploadStrukClient = ({ settings, layoutData }: { settings: SettingsDat
             });
 
             if (!res.ok) {
-                setToast({ type: 'error', title: 'Gagal', message: "Terjadi kesalahan saat OCR, Coba lagi" });
+                const error = await res.json()
+                setToast({ type: 'error', title: 'Gagal', message: error.error || "Terjadi kesalahan saat OCR, Coba lagi" });
                 return;
             }
 
