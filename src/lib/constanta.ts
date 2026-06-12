@@ -1690,15 +1690,6 @@ export const exampleLayoutData = [
     config: DefaultListrikLayout as any,
     createdAt: new Date(),
     updatedAt: new Date()
-  },
-  {
-    id: "8989jnHiuhiwhuew",
-    name: "STRUK TRANSFER E-WALLET",
-    userId: null,
-    isDefault: false,
-    config: DefaultListrikLayout as any,
-    createdAt: new Date(),
-    updatedAt: new Date()
   }
 ]
 

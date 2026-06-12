@@ -63,17 +63,13 @@ export default function PageManualStrukClient({ settings, layoutData }: { settin
 
   // --- MEMOIZE OPTIONS UNTUK SEARCHABLE SELECT ---
   const layoutOptions = useMemo(() => {
-    const defaultOption = {
-      id: "default_system",
-      label: "Layout Bawaan Sistem (Default)"
-    };
 
     const customOptions = layoutData.map(layout => ({
       id: layout.id,
       label: layout.name
     }));
 
-    return [defaultOption, ...customOptions];
+    return [...customOptions];
   }, [layoutData]);
 
   useEffect(() => {

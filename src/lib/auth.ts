@@ -135,12 +135,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               isDefault: true,
               config: DefaultListrikLayout as any
             },
-            {
-              name: "STRUK TRANSFER E-WALLET",
-              userId: user.id,
-              isDefault: false,
-              config: DefaultEwalletLayout as any
-            }
           ]
         });
       } catch (error) {
