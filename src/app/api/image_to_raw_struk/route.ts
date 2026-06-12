@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     
     targetFields.forEach((field: any) => {
       const keyLower = (field.key || "").toLowerCase();
+      const dataTypeLower = (field.dataType || "").toLowerCase();
       let finalDescription = "";
 
       // Pemetaan instruksi pendek dan super ketat berdasarkan KEY uniknya saja
@@ -66,6 +67,9 @@ export async function POST(req: Request) {
       else if (keyLower === "kode_referensi") {
         finalDescription = "Nomor referensi, Reference No, atau ID Transaksi resmi dari pihak bank. Contoh di gambar: '702604120610301933'.";
       } 
+      else if (dataTypeLower === "date" || keyLower.includes("tanggal") || keyLower.includes("periode")) {
+        finalDescription = "Field bertipe tanggal atau periode waktu transaksi. Cari teks penanda waktu di gambar. Jika teks berupa format angka mentah penanda bulan/tahun tanpa tanggal hari (seperti '202606' atau '2026/06'), ubah otomatis secara cerdas menjadi nama bulan singkat dan tahun dengan format 'MMM YYYY' (Contoh: 'Jun 2026'). Jika ada tanggal lengkapnya, gunakan format 'DD MMM YYYY' (Contoh: '12 Apr 2026').";
+      }
       else {
         finalDescription = `Ekstrak nilai data secara akurat untuk field ${field.key}. Jika benar-benar tidak tertera di gambar bukti transaksi, isi dengan string "null".`;
       }
