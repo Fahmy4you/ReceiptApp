@@ -80,7 +80,7 @@ export default function PageManualStrukClient({ settings, layoutData }: { settin
   // Fungsi pembersih sekaligus pembangun ulang struktur input schema form
   const rebuildFormSchema = (targetConfig: ReceiptElement[]) => {
     const freshData = targetConfig
-      .filter((el): el is InputTextConfig => el.type === 'input_text')
+      .filter((el): el is InputTextConfig => el.type == 'input_text')
       .reduce((acc, el) => {
         acc[normalizeKey(el.label)] = '';
         return acc;

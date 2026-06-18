@@ -111,8 +111,12 @@ export async function POST(req: Request) {
 
     Catatan Pengolahan Nilai (WAJIB):
     - Format Tanggal: Wajib format "DD MMM YYYY" (Contoh: "12 Apr 2026").
+    - Jika ada nama dipisahkan dengan "-" atau "_" seperti "FAHMY-BIMA" maka hapus itu dan ganti dengan spasi "FAHMY BIMA"
     - Bersihkan spasi, tanda minus (-), dan karakter non-angka pada No.HP, No.Rekening, No.Meteran, dan No.VA.
-    - Untuk nilai nominal/uang, bersihkan dari simbol (Rp, IDR), titik, koma, serta angka desimal sen (,00). Hasil akhir wajib berupa ANGKA MURNI (Contoh: "12900").`;
+    - Untuk nilai nominal/uang, bersihkan dari simbol (Rp, IDR), titik, koma, serta angka desimal sen (,00). Hasil akhir wajib berupa ANGKA MURNI (Contoh: "12900").
+    - Jika ada token listrik atau token apapun itu tolong pisahkah value nya setiap 4 angka menggunakan - (Contoh: "5748-1459-9030-2193-2921")
+    - Gabungkan baris "STAND" dan "METER" jika posisinya berurutan menjadi satu kesatuan informasi, yaitu "STAND METER". Nilai dari stand meter tersebut adalah rentang angka di sebelahnya (Contoh: "00036267-00036601").
+    `;
 
     const contents = [
       { 
