@@ -26,7 +26,7 @@ import {
 import { getUserById } from '@/models/User';
 import { getUserDashboardStats } from '@/models/UserStatistic';
 import LoadingScreenSkeleton from '@/components/Loading';
-import { exampleHistoryData, labelWaktu } from '@/lib/constanta';
+import { DefaultConfigLayout, DefaultEwalletLayout, exampleHistoryData, labelWaktu } from '@/lib/constanta';
 import TrendChart from '@/components/TrendChart';
 import { getAllReceipts } from '@/models/Receipt';
 import { copyToClipboard, formatIDR } from '@/lib/Helpers';
@@ -35,8 +35,10 @@ import Toast from '@/components/Toast';
 import { signOut, useSession } from 'next-auth/react';
 import { LuLoader, LuUserPen } from 'react-icons/lu';
 import { useRouter } from 'next/navigation';
+import { ReceiptWithLayout, SettingsData } from '@/lib/types';
+import PreviewPage from '@/components/PreviewPage';
 
-export default function PageHomeClient() {
+export default function PageHomeClient({settingData}: {settingData: SettingsData}) {
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState<any>({
     totalLayout: 0,
@@ -57,6 +59,10 @@ export default function PageHomeClient() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [strukData, setStrukData] = useState<any>(null);
+  const [config, setConfig] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const router = useRouter();
@@ -127,6 +133,21 @@ export default function PageHomeClient() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const previewData = (item: ReceiptWithLayout) => {
+    setStrukData(item.content);
+      if (item.layout && item.layout.config) {
+        setConfig(item.layout.config);
+      } else {
+        if(item.layoutId == "DEFAULT_EWALLET_LAYOUT") {
+          setConfig(DefaultEwalletLayout);
+        } else {
+          setConfig(DefaultConfigLayout);
+        }
+      }
+  
+      setShowModal(true);
   }
 
   useEffect(() => {
@@ -298,136 +319,7 @@ export default function PageHomeClient() {
           </div>
         </div>
 
-        {/* Grid Kartu Info Ringkas */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-    
-          {/* Kartu 1: Layout Dimiliki */}
-          {(session.status == "unauthenticated") ? (
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
-                  Total User
-                </span>
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                  <FiUsers className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  {stats.totalUser}
-                </h4>
-                <p className={`text-[10px] md:text-xs font-bold flex items-center gap-1 mt-1 ${
-                  stats.percentUser >= 0 ? 'text-emerald-500' : 'text-rose-500'
-                }`}>
-                  <span>{stats.percentUser >= 0 ? `▲ +${stats.percentUser}%` : `▼ ${stats.percentUser}%`}</span>
-                  <span className="text-slate-400 dark:text-zinc-500 font-normal">{currentLabel}</span>
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
-                  Layout Dimiliki
-                </span>
-                <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center">
-                  <FiLayers className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  {stats.totalLayout}
-                </h4>
-                <Link href={"/layout"} className="text-[10px] cursor-pointer hover:text-blue-500 md:text-xs text-slate-400 dark:text-zinc-500 font-medium flex items-center gap-1 mt-1">
-                  <FaArrowUpRightFromSquare className="w-2.5 h-2.5" />
-                  <span>Layout terdaftar</span>
-                </Link>
-              </div>
-            </div>
-          )}
-          
-
-          {/* Kartu 2: Cetak PDF */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
-                Cetak PDF
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                <FiUploadCloud className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {stats.totalPdf}
-              </h4>
-              <p className={`text-[10px] md:text-xs font-bold flex items-center gap-1 mt-1 ${
-                stats.percentPdf >= 0 ? 'text-emerald-500' : 'text-rose-500'
-              }`}>
-                <span>{stats.percentPdf >= 0 ? `▲ +${stats.percentPdf}%` : `▼ ${stats.percentPdf}%`}</span>
-                <span className="text-slate-400 dark:text-zinc-500 font-normal">{currentLabel}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Kartu 3: Cetak Gambar */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
-                Cetak Gambar
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-500 flex items-center justify-center">
-                <FiFileText className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {stats.totalGambar}
-              </h4>
-              <p className={`text-[10px] md:text-xs font-bold flex items-center gap-1 mt-1 ${
-                stats.percentGambar >= 0 ? 'text-emerald-500' : 'text-rose-500'
-              }`}>
-                <span>{stats.percentGambar >= 0 ? `▲ +${stats.percentGambar}%` : `▼ ${stats.percentGambar}%`}</span>
-                <span className="text-slate-400 dark:text-zinc-500 font-normal">{currentLabel}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Kartu 4: Total Print (PDF + IMG + PRINT) */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:shadow-lg dark:hover:shadow-black/30 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] md:text-xs text-slate-400 dark:text-zinc-400 font-semibold tracking-wide uppercase">
-                Total Print
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-500 flex items-center justify-center">
-                <FiCpu className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              {/* Menampilkan totalSemua hasil akumulasi dari backend */}
-              <h4 className="text-lg md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {stats.totalPrint}
-              </h4>
-              <p className={`text-[10px] md:text-xs font-bold flex items-center gap-1 mt-1 ${
-                stats.percentPrint >= 0 ? 'text-emerald-500' : 'text-rose-500'
-              }`}>
-                <span>{stats.percentPrint >= 0 ? `▲ +${stats.percentPrint}%` : `▼ ${stats.percentPrint}%`}</span>
-                <span className="text-slate-400 dark:text-zinc-500 font-normal">{currentLabel}</span>
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Grafik & Aktivitas Terakhir */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <TrendChart 
-            chartData={stats.chartData} 
-            filter={stats.filterAman} 
-          />
-
-          {/* Tiga Log Transaksi Terbaru */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-900 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-900 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-bold text-sm md:text-base">Aktivitas Terkini</h4>
@@ -462,7 +354,7 @@ export default function PageHomeClient() {
                     });
 
                     return (
-                      <div key={tx.id} className="flex gap-3 items-center justify-between py-2">
+                      <div key={tx.id} onClick={() => previewData(tx)} className="flex gap-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-800 px-2 py-1 rounded-lg items-center justify-between py-2">
                         <div className="flex gap-3 min-w-0">
                           {/* Ikon dinamis berdasarkan tipe */}
                           <div
@@ -506,8 +398,20 @@ export default function PageHomeClient() {
               Lihat Seluruh Riwayat
             </Link>
           </div>
-        </div>
       </div>
+
+      {showModal && (
+          <PreviewPage
+            show={showModal}
+            onClose={() => setShowModal(false)}
+            formData={strukData} 
+            setFormData={setStrukData}
+            isGenerating={isGenerating}
+            config={config}
+            setIsGenerating={setIsGenerating}
+            settings={settingData as SettingsData | null}
+          />
+      )}
     </>
   );
 }

@@ -109,6 +109,10 @@ export async function POST(req: Request) {
             if (el.type === 'input_text') {
                 let rawValue = formData[key] || "-";
                 const currencyTypes = ['Nominal', 'Admin_Fee', 'total_keseluruhan', 'Currency', 'Admin_fee'];
+                if(rawValue == 'null' || rawValue == 'NULL' || rawValue == 'Null') {
+                    rawValue = '-';
+                }
+                
                 if (currencyTypes.includes(el.dataType) && rawValue != '-' && rawValue != '' ) {
                     const cleanNum = cleanCurrencyInput(rawValue);
                     rawValue = `Rp ${formatIDR(cleanNum)}`;
