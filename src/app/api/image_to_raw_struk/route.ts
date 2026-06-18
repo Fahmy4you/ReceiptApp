@@ -116,6 +116,9 @@ export async function POST(req: Request) {
     - Untuk nilai nominal/uang, bersihkan dari simbol (Rp, IDR), titik, koma, serta angka desimal sen (,00). Hasil akhir wajib berupa ANGKA MURNI (Contoh: "12900").
     - Jika ada token listrik atau token apapun itu tolong pisahkah value nya setiap 4 angka menggunakan - (Contoh: "5748-1459-9030-2193-2921")
     - Gabungkan baris "STAND" dan "METER" jika posisinya berurutan menjadi satu kesatuan informasi, yaitu "STAND METER". Nilai dari stand meter tersebut adalah rentang angka di sebelahnya (Contoh: "00036267-00036601").
+    - Ekstrak nomor 20 digit setelah teks "SN : " menjadi token. JANGAN masukkan nilai SN/Token ini ke dalam referensi.
+    - Jika dalam gambar tidak terdapat kolom khusus nomor referensi transaksi maka set no referensi menjadi null. Jangan menduplikasi nomor token ke kolom referensi.
+    - Untuk struk listrik baris "Tujuan", petakan nilainya ke no meter, jika memang tiada baris no meter, jika ada baris no meter dan tujuan maka kasih aja ke ID Pelanggan, jangan sampai sama ID Pelanggan dan No Meter.
     `;
 
     const contents = [

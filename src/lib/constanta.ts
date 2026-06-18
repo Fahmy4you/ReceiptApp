@@ -1238,27 +1238,6 @@ export const DefaultListrikLayout: ReceiptElement[] = [
     "marginBottom": 4
   },
   {
-    "id": "dbec81d5-ed9b-4cd3-8e6c-ed95a92bff78",
-    "gap": 12,
-    "type": "input_text",
-    "color": "#1a1a1a",
-    "label": "REF",
-    "dataType": "Referensi",
-    "position": "default",
-    "hasBorder": false,
-    "marginTop": 0,
-    "showLabel": true,
-    "labelLayout": "inline",
-    "exampleValue": "8737382392",
-    "marginBottom": 0,
-    "labelFontSize": 14,
-    "valueFontSize": 14,
-    "labelFontWeight": "semi",
-    "valueFontWeight": "semi",
-    "labelLetterSpacing": 0,
-    "valueLetterSpacing": 0
-  },
-  {
     "id": "aa7c1f00-2ada-43d8-9184-51e50c83efef",
     "type": "text",
     "color": "#1a1a1a",
