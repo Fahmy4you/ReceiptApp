@@ -37,7 +37,7 @@ const MainNavbar = () => {
             <FiGrid className="w-5 h-5" />
             </div>
             <div>
-            <h1 className="font-extrabold text-base tracking-tight leading-none">StrukApp - Buat Struk Digital dengan Mudah</h1>
+            <h1 className="font-extrabold text-base tracking-tight leading-none">ReceiptApp - Buat Struk Digital dengan Mudah</h1>
             <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">Application v1.0</span>
             </div>
         </div>

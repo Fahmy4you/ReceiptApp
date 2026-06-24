@@ -16,7 +16,6 @@
             flex-direction: column;
             align-items: center;
             margin: 0;
-            /* padding: 20px 0; */
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
@@ -25,6 +24,7 @@
             background-color: #ffffff !important;
             width: 226px; 
             padding: 10px 12px;
+            padding-bottom: 15px;
             position: relative;
             color: #000;
             box-sizing: border-box;
@@ -93,24 +93,7 @@
             display: flex;
             width: 100%;
             box-sizing: border-box;
-        }
-        
-        .info-row.row-inline {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-
-        .info-row.row-stacked {
-            flex-direction: column;
-        }
-
-        .info-row span.label-text {
-            display: inline-block;
-        }
-
-        .info-row span.value-text {
-            display: inline-block;
+            line-height: 1.1;
         }
 
         .wordBreak {
@@ -121,6 +104,23 @@
             display: block; 
             width: 100%;
         }
+
+        /* ------------------------------------------------------------- */
+        /* CLASS LAYOUT ADAPTIF BARU (SESUAI LIVE PREVIEW & API ROUTE)   */
+        /* ------------------------------------------------------------- */
+        
+        /* 1. Kondisi Elemen Sejajar (Row Inline) */
+        .row-inline.pos-left    { justify-content: flex-start; align-items: baseline; }
+        .row-inline.pos-center  { justify-content: center; align-items: baseline; }
+        .row-inline.pos-default { justify-content: flex-end; align-items: baseline; }
+        .row-inline.pos-justify { justify-content: space-between; align-items: baseline; }
+
+        /* 2. Kondisi Elemen Bertumpuk (Row Stacked) */
+        .row-stacked { flex-direction: column; }
+        .row-stacked.pos-left    { align-items: flex-start; }
+        .row-stacked.pos-center  { align-items: center; }
+        .row-stacked.pos-default { align-items: flex-end; }
+        .row-stacked.pos-justify { align-items: stretch; }
 
         @media print {
             body { 
@@ -165,19 +165,31 @@
         {{/if}}
 
         {{#if isInput}}
-            <div class="info-row {{#if isStacked}}row-stacked{{else}}row-inline{{/if}}" 
+            <div class="info-row {{#if isStacked}}row-stacked{{else}}row-inline{{/if}} pos-{{position}}" 
                  style="margin-top: {{marginTop}}px; 
                         margin-bottom: {{marginBottom}}px; 
                         gap: {{gap}}px; 
                         color: {{color}}; 
-                        {{#if isCentered}}text-align: center; justify-content: center; align-items: center;{{/if}}
                         {{#if hasBorder}}border: 2px solid {{color}}; padding: 8px;{{/if}}">
                 
                 {{#if showLabel}}
-                    <span class="label-text" style="font-size: {{labelFontSize}}px; font-weight: {{labelFontWeight}}; letter-spacing: {{labelLetterSpacing}}px;">{{label}}</span>
+                    <span class="label-text animate-text" 
+                          style="font-size: {{labelFontSize}}px; 
+                                 font-weight: {{labelFontWeight}}; 
+                                 letter-spacing: {{labelLetterSpacing}}px;
+                                 text-align: {{#if (eq position 'justify')}}left{{else if (eq position 'default')}}right{{else}}{{position}}{{/if}};">
+                        {{label}}
+                    </span>
                 {{/if}}
                 
-                <span class="value-text wordBreak" style="font-size: {{valueFontSize}}px; font-weight: {{valueFontWeight}}; letter-spacing: {{valueLetterSpacing}}px; {{{textCaseStyle}}} {{#if isStacked}}{{else}}{{#if isCentered}}{{else}}text-align: right; flex: 1;{{/if}}{{/if}}">{{value}}</span>
+                <span class="value-text wordBreak" 
+                      style="font-size: {{valueFontSize}}px; 
+                             font-weight: {{valueFontWeight}}; 
+                             letter-spacing: {{valueLetterSpacing}}px; 
+                             {{{textCaseStyle}}}
+                             text-align: {{#if (eq position 'justify')}}{{#if isStacked}}justify{{else}}right{{/if}}{{else if (eq position 'default')}}right{{else}}{{position}}{{/if}};">
+                    {{value}}
+                </span>
             </div>
         {{/if}}
 

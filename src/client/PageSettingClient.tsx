@@ -40,7 +40,7 @@ const PageSettingsClient: React.FC<{ initialData?: SettingsData }> = ({ initialD
   const session = useSession();
   
   // Data State
-  const [shopName, setShopName] = useState(initialData?.shopName || 'StrukApp Digital');
+  const [shopName, setShopName] = useState(initialData?.shopName || 'ReceiptApp Digital');
   const [alamat, setAlamat] = useState(initialData?.alamat || null);
   const [logoPreview, setLogoPreview] = useState<string | null>(initialData?.logo || null);
   

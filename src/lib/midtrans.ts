@@ -26,7 +26,7 @@ export const createSnapTransaction = async (payload: SnapPayload) => {
   const transaksi_pending = await getTransactionPendingByUserId(session.user.id);
   if (transaksi_pending) return { success: false, error: "Anda Masih Mempunyai Transaksi Pending" };
 
-  const orderId = `STRUKAPP-${session.user.id.slice(-10)}-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`.slice(0, 48);
+  const orderId = `RECEIPTAPP-${session.user.id.slice(-10)}-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`.slice(0, 48);
 
   const parameter = {
     transaction_details: {

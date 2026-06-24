@@ -95,7 +95,7 @@ export interface InputTextElement extends BaseElement {
   label: string;
   showLabel: boolean;
   dataType: DataType;
-  position: 'default' | 'center';
+  position: 'default' | 'left' | 'center' | 'justify';
   labelLayout: LabelLayout;
   labelFontSize: number;
   valueFontSize: number;

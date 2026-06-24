@@ -23,7 +23,7 @@ async function main() {
     create: {
       id: 'l-free-tier',
       name: 'Free Tier',
-      description: 'Sempurna untuk mencoba kehebatan fitur dasar StrukApp',
+      description: 'Sempurna untuk mencoba kehebatan fitur dasar ReceiptApp',
       features: { token_perhari_yang_didapat: "10", maksimal_layout: "3" },
       colorTheme: "border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900",
       buttonTheme: "bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-white",

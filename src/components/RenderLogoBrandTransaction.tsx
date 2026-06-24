@@ -110,7 +110,7 @@ export function PaymentInstructions({ methodId, paymentCode }: { methodId: METHO
           </div>
           <div className="flex items-start space-x-3">
             <span className="w-5 h-5 rounded-full bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400 text-xs shrink-0">4</span>
-            <p className="text-xs pt-0.5 text-zinc-600 dark:text-zinc-400">Periksa rincian tagihan StrukApp Anda, klik OK, lalu masukkan PIN m-BCA Anda.</p>
+            <p className="text-xs pt-0.5 text-zinc-600 dark:text-zinc-400">Periksa rincian tagihan ReceiptApp Anda, klik OK, lalu masukkan PIN m-BCA Anda.</p>
           </div>
         </div>
       );

@@ -305,7 +305,7 @@ export default function App() {
         <div className="max-w-4xl mx-auto px-4 mt-16 space-y-6">
           <div className="text-center">
             <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Pertanyaan yang Sering Diajukan</h2>
-            <p className="text-[11px] md:text-xs text-slate-400 dark:text-zinc-500 mt-1">Jawaban cepat atas pertanyaan seputar aktivasi & langganan StrukApp.</p>
+            <p className="text-[11px] md:text-xs text-slate-400 dark:text-zinc-500 mt-1">Jawaban cepat atas pertanyaan seputar aktivasi & langganan ReceiptApp.</p>
           </div>
 
           <div className="space-y-4">

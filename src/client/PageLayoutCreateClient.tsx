@@ -67,10 +67,10 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
           label: 'Label Baru', 
           showLabel: true,
           dataType: 'random_text', 
-          position: 'default', 
+          position: 'justify', // Tetap justify sebagai default bawaan komponen baru
           labelLayout: 'inline',
-          labelFontSize: 12, 
-          valueFontSize: 12, 
+          labelFontSize: 14, // Diubah ke 14 (Small)
+          valueFontSize: 14, // Diubah ke 14 (Small)
           labelFontWeight: 'reg',
           valueFontWeight: 'reg',
           color: '#1a1a1a',
@@ -84,10 +84,10 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
         } as any;
         break;
       case 'input_image':
-        newEl = { id, type: 'input_image', width: 120, height: 60, source: 'logo', marginTop: 10, marginBottom: 10 };
+        newEl = { id, type: 'input_image', width: 120, height: 60, source: 'logo', marginTop: 10, marginBawah: 10 };
         break;
       case 'text':
-        newEl = { id, type: 'text', value: 'Teks Baru', fontSize: 11, fontWeight: 'reg', alignment: 'left', color: '#1a1a1a', marginTop: 5, marginBottom: 5, letterSpacing: 0 } as any;
+        newEl = { id, type: 'text', value: 'Teks Baru', fontSize: 14, fontWeight: 'reg', alignment: 'left', color: '#1a1a1a', marginTop: 5, marginBottom: 5, letterSpacing: 0 } as any; // Diubah ke 14 (Small)
         break;
       case 'separator':
         newEl = { id, type: 'separator', style: 'dash', color: '#333333', marginTop: 10, marginBottom: 10, thickness: 1.5 } as any;
@@ -168,7 +168,6 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
         />
       </div>
       
-      {/* Letter Spacing Terpisah untuk Input Text */}
       {row.type === 'input_text' && (
         <>
           <div className="space-y-1">
@@ -224,7 +223,6 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
         </div>
       )}
 
-      {/* Input Ketebalan Baru untuk Separator */}
       {row.type === 'separator' && (
         <div className="space-y-1 sm:col-span-2">
           <label className="text-[9px] font-bold uppercase text-zinc-400 flex items-center gap-1">
@@ -344,18 +342,34 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                             </div>
                           </div>
 
+                          {/* Default value diset ke 14 */}
                           <div className="space-y-1 sm:col-span-2 grid grid-cols-2 gap-2">
                             <div>
                               <label className="text-[10px] font-bold uppercase text-zinc-400 block truncate">Size Label</label>
-                              <input type="number" value={(row as InputTextElement).labelFontSize} onChange={e => updateRow(row.id, { labelFontSize: parseInt(e.target.value) || 12 })} className="w-full px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none" />
+                              <select 
+                                value={(row as InputTextElement).labelFontSize ?? 14} 
+                                onChange={e => updateRow(row.id, { labelFontSize: parseInt(e.target.value) })} 
+                                className="w-full px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none bg-white dark:bg-zinc-900"
+                              >
+                                <option value="14">Small (14px)</option>
+                                <option value="20">Standard (20px)</option>
+                                <option value="26">Large (26px)</option>
+                              </select>
                             </div>
                             <div>
                               <label className="text-[10px] font-bold uppercase text-zinc-400 block truncate">Size Value</label>
-                              <input type="number" value={(row as InputTextElement).valueFontSize} onChange={e => updateRow(row.id, { valueFontSize: parseInt(e.target.value) || 12 })} className="w-full px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none" />
+                              <select 
+                                value={(row as InputTextElement).valueFontSize ?? 14} 
+                                onChange={e => updateRow(row.id, { valueFontSize: parseInt(e.target.value) })} 
+                                className="w-full px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none bg-white dark:bg-zinc-900"
+                              >
+                                <option value="14">Small (14px)</option>
+                                <option value="20">Standard (20px)</option>
+                                <option value="26">Large (26px)</option>
+                              </select>
                             </div>
                           </div>
 
-                          {/* Pemisahan Weight Kontrol Label & Value */}
                           <div className="space-y-1 sm:col-span-2 grid grid-cols-2 gap-2">
                             <div>
                               <label className="text-[10px] font-bold uppercase text-zinc-400">Weight Label</label>
@@ -377,15 +391,31 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
 
                           <div className="space-y-1 sm:col-span-2 grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[10px] font-bold uppercase text-zinc-400">Layout</label>
+                              <label className="text-[10px] font-bold uppercase text-zinc-400">Layout Baris</label>
                               <select value={(row as InputTextElement).labelLayout} onChange={e => updateRow(row.id, { labelLayout: e.target.value as LabelLayout })} className="w-full px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none bg-white dark:bg-zinc-900">
-                                <option value="inline">Sejajar</option><option value="stacked">Stack</option>
+                                <option value="inline">Sejajar (Inline)</option>
+                                <option value="stacked">Bertumpuk (Stack)</option>
                               </select>
                             </div>
-                            <div className="flex flex-col justify-end">
+                            
+                            <div>
+                              <label className="text-[10px] font-bold uppercase text-zinc-400">Posisi Blok</label>
                               <div className="flex gap-1 p-1 rounded-lg border dark:border-zinc-700 bg-white dark:bg-zinc-900 h-9 items-center justify-center">
-                                {['default', 'center'].map(pos => (
-                                  <button key={pos} type="button" onClick={() => { const u: any = { position: pos }; if (pos === 'center') u.labelLayout = 'stacked'; updateRow(row.id, u); }} className={`flex-1 py-1 rounded text-[9px] font-bold uppercase transition-all ${ (row as InputTextElement).position === pos ? 'bg-blue-600 text-white' : 'text-zinc-400'}`}>{pos}</button>
+                                {[
+                                  { id: 'left', icon: AlignLeft, title: 'Kiri' },
+                                  { id: 'center', icon: AlignCenter, title: 'Tengah' },
+                                  { id: 'default', icon: AlignRight, title: 'Kanan' },
+                                  { id: 'justify', icon: ArrowLeftRight, title: 'Justify' },
+                                ].map(pos => (
+                                  <button 
+                                    key={pos.id} 
+                                    type="button" 
+                                    title={pos.title}
+                                    onClick={() => updateRow(row.id, { position: pos.id as any })} 
+                                    className={`flex-1 py-1 rounded flex items-center justify-center transition-all ${ (row as InputTextElement).position === pos.id ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
+                                  >
+                                    <pos.icon size={13} />
+                                  </button>
                                 ))}
                               </div>
                             </div>
@@ -406,7 +436,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold uppercase text-zinc-400">Sumber Gambar</label>
                             <select value={row.source} onChange={e => updateRow(row.id, { source: e.target.value as any })} className="w-full px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none bg-white dark:bg-zinc-900">
-                              <option value="logo">Logo Default</option><option value="upload">Upload</option>
+                              <option value="logo">Logo Default</option>
                             </select>
                           </div>
                         </>
@@ -426,10 +456,20 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                                <div className="w-4 h-4 rounded-full border shadow-sm flex-shrink-0" style={{ backgroundColor: (row as TextElement).color }} />
                             </div>
                           </div>
+                          
+                          {/* Default size diset ke 14 */}
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold uppercase text-zinc-400">Font & Weight</label>
+                            <label className="text-[10px] font-bold uppercase text-zinc-400">Font Size & Weight</label>
                             <div className="flex gap-2">
-                               <input type="number" value={(row as TextElement).fontSize} onChange={e => updateRow(row.id, { fontSize: parseInt(e.target.value) })} className="w-1/2 px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none" />
+                               <select 
+                                 value={(row as TextElement).fontSize ?? 14} 
+                                 onChange={e => updateRow(row.id, { fontSize: parseInt(e.target.value) })} 
+                                 className="w-1/2 px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none bg-white dark:bg-zinc-900"
+                               >
+                                 <option value="14">Small (14px)</option>
+                                 <option value="20">Standard (20px)</option>
+                                 <option value="26">Large (26px)</option>
+                               </select>
                                <select value={(row as TextElement).fontWeight} onChange={e => updateRow(row.id, { fontWeight: e.target.value as any })} className="w-1/2 px-2.5 py-1.5 rounded-lg border dark:bg-zinc-900 dark:border-zinc-700 dark:text-white text-xs sm:text-sm outline-none bg-white dark:bg-zinc-900">
                                   <option value="reg">Reg</option>
                                   <option value="semi">Semi</option>
@@ -519,13 +559,29 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                     if (row.type === 'input_text') {
                       const el = row as InputTextElement;
                       const isStacked = el.labelLayout === 'stacked';
-                      const isCentered = el.position === 'center';
                       const rowGap = `${el.gap ?? 12}px`; 
+
+                      let justifyClass = 'justify-between'; 
+                      let alignClass = 'items-baseline';
+                      let textAlignment: 'left' | 'center' | 'right' | 'justify' = 'left';
+
+                      if (isStacked) {
+                        alignClass = 'items-stretch';
+                        if (el.position === 'left') { justifyClass = 'items-start'; textAlignment = 'left'; }
+                        else if (el.position === 'center') { justifyClass = 'items-center'; textAlignment = 'center'; }
+                        else if (el.position === 'default') { justifyClass = 'items-end'; textAlignment = 'right'; }
+                        else { justifyClass = 'items-stretch'; textAlignment = 'justify'; } 
+                      } else {
+                        if (el.position === 'left') { justifyClass = 'justify-start'; textAlignment = 'left'; }
+                        else if (el.position === 'center') { justifyClass = 'justify-center'; textAlignment = 'center'; }
+                        else if (el.position === 'default') { justifyClass = 'justify-end'; textAlignment = 'right'; }
+                        else { justifyClass = 'justify-between'; textAlignment = 'left'; } 
+                      }
 
                       return (
                         <div 
                           key={el.id} 
-                          className={`info-row wrap-break-word flex ${isStacked ? 'flex-col' : 'justify-between items-baseline'} ${isCentered ? 'text-center justify-center' : ''}`} 
+                          className={`info-row wrap-break-word flex ${isStacked ? 'flex-col' : ''} ${justifyClass} ${alignClass}`} 
                           style={{ 
                             color: el.color, 
                             border: el.hasBorder ? `2px solid ${el.color}` : 'none', 
@@ -539,11 +595,12 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                             <span 
                               suppressHydrationWarning
                               translate='no'
-                              className={`uppercase wrap-break-word ${isStacked ? 'text-[0.85em]' : 'pr-[5px]'}`}
+                              className={`uppercase wrap-break-word ${isStacked ? 'text-[0.85em]' : ''}`}
                               style={{ 
                                 fontSize: `${el.labelFontSize}px`,
-                                fontWeight: weightConstanta[el.labelFontWeight] || 400, // Terpisah
-                                letterSpacing: `${el.labelLetterSpacing ?? 0}px`, // Terpisah
+                                fontWeight: weightConstanta[el.labelFontWeight] || 400, 
+                                letterSpacing: `${el.labelLetterSpacing ?? 0}px`,
+                                textAlign: textAlignment === 'justify' ? 'left' : textAlignment
                               }}
                             >
                               {el.label}
@@ -552,11 +609,12 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                           <span 
                             suppressHydrationWarning
                             translate='no'
-                            className={`leading-tight wrap-break-word ${!isStacked && !isCentered ? 'text-right' : ''}`}
+                            className="leading-tight wrap-break-word"
                             style={{ 
                               fontSize: `${el.valueFontSize}px`,
-                              fontWeight: weightConstanta[el.valueFontWeight] || 400, // Terpisah
-                              letterSpacing: `${el.valueLetterSpacing ?? 0}px`, // Terpisah
+                              fontWeight: weightConstanta[el.valueFontWeight] || 400, 
+                              letterSpacing: `${el.valueLetterSpacing ?? 0}px`,
+                              textAlign: el.position === 'justify' && !isStacked ? 'right' : textAlignment,
                               wordBreak: "break-word"
                             }}
                           >
@@ -572,7 +630,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                             {row.source === 'logo' ? (
                               <svg viewBox="0 0 100 100" className="grayscale contrast-[1.5] brightness-100" style={{ width: `${row.width}px`, height: 'auto' }}>
                                 <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" fill="none" stroke="#000" strokeWidth="3" />
-                                <text x="50" y="55" textAnchor="middle" fontSize="11" fontWeight="700" fill="#000">LOGO SMK</text>
+                                <text x="50" y="54" textAnchor="middle" fontSize="12" fontWeight="900" fill="#000" letterSpacing="-0.5">LOGO</text>
                               </svg>
                             ) : (
                               <div className="bg-zinc-100 border-2 border-dashed border-zinc-300 flex items-center justify-center" style={{ width: `${row.width}px`, height: `${row.height}px` }}>
@@ -613,7 +671,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
                     }
                     if (row.type === 'separator') {
                       const el = row as SeparatorElement;
-                      const lineThickness = `${el.thickness ?? 2}px`; // Menggunakan variabel dinamis thickness
+                      const lineThickness = `${el.thickness ?? 2}px`;
                       
                       if (el.style === 'double_line') {
                         return (

@@ -28,7 +28,7 @@ export default function AdminSidebar() {
           </div>
           <div>
             <h2 className="text-sm font-black tracking-tight">Admin Panel</h2>
-            <p className="text-[10px] text-slate-400">StrukApp</p>
+            <p className="text-[10px] text-slate-400">ReceiptApp</p>
           </div>
         </div>
       </div>

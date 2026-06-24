@@ -135,6 +135,7 @@ export async function POST(req: Request) {
                     valueFontWeight: weightConstanta[el.valueFontWeight as keyof typeof weightConstanta] || 400,
                     color: el.color || '#000', 
                     isStacked: el.labelLayout === 'stacked',
+                    position: el.position || 'default',
                     isCentered: el.position === 'center',
                     isTotal: el.dataType === 'total_keseluruhan',
                     hasBorder: el.hasBorder,

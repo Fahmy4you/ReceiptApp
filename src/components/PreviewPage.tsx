@@ -305,7 +305,6 @@ const PreviewPage: FC<PreviewPageProps> = ({
         }
 
         const isStacked = element.labelLayout === 'stacked';
-        const isCentered = element.position === 'center';
         const rowGap = `${element.gap ?? 12}px`;
         
         const isDate = element.dataType === 'Date';
@@ -322,10 +321,28 @@ const PreviewPage: FC<PreviewPageProps> = ({
           textCaseClass = isCurrency ? "" : "capitalize";
         }
 
+        // ADAPTASI LOGIKA LAYOUT FLEXBOX DAN ALIGNMENT BARU
+        let justifyClass = 'justify-between'; 
+        let alignClass = 'items-baseline';
+        let textAlignment: 'left' | 'center' | 'right' | 'justify' = 'left';
+
+        if (isStacked) {
+          alignClass = 'items-stretch';
+          if (element.position === 'left') { justifyClass = 'items-start'; textAlignment = 'left'; }
+          else if (element.position === 'center') { justifyClass = 'items-center'; textAlignment = 'center'; }
+          else if (element.position === 'default') { justifyClass = 'items-end'; textAlignment = 'right'; }
+          else { justifyClass = 'items-stretch'; textAlignment = 'justify'; }
+        } else {
+          if (element.position === 'left') { justifyClass = 'justify-start'; textAlignment = 'left'; }
+          else if (element.position === 'center') { justifyClass = 'justify-center'; textAlignment = 'center'; }
+          else if (element.position === 'default') { justifyClass = 'justify-end'; textAlignment = 'right'; }
+          else { justifyClass = 'justify-between'; textAlignment = 'left'; }
+        }
+
         return (
           <div 
             key={element.id} 
-            className={`flex leading-[1.1] ${isStacked ? 'flex-col' : 'justify-between items-baseline'} ${isCentered ? 'text-center justify-center' : ''}`}
+            className={`flex leading-[1.1] ${isStacked ? 'flex-col' : ''} ${justifyClass} ${alignClass}`}
             style={{
               color: element.color || '#000',
               border: element.hasBorder ? `2px solid ${element.color || '#000'}` : 'none',
@@ -339,11 +356,12 @@ const PreviewPage: FC<PreviewPageProps> = ({
               <span 
                 suppressHydrationWarning
                 translate='no'
-                className={`uppercase ${isStacked ? 'text-[0.85em]' : 'pr-[5px]'}`}
+                className={`uppercase ${isStacked ? 'text-[0.85em]' : ''}`}
                 style={{ 
                   fontSize: `${element.labelFontSize || 12}px`,
                   fontWeight: weightConstanta[element.labelFontWeight as CustomFontWeight] || 400,
                   letterSpacing: `${element.labelLetterSpacing ?? 0}px`,
+                  textAlign: textAlignment === 'justify' ? 'left' : textAlignment
                 }}
               >
                 {element.label}
@@ -359,11 +377,12 @@ const PreviewPage: FC<PreviewPageProps> = ({
                 const finalValue = isCurrency ? cleanCurrencyInput(rawText) : rawText;
                 setFormData(prev => ({ ...prev, [key]: finalValue }));
               }}
-              className={`outline-none focus:bg-yellow-50 ${!isStacked && !isCentered ? 'text-right' : ''} ${textCaseClass}`}
+              className={`outline-none focus:bg-yellow-50 ${textCaseClass}`}
               style={{ 
                 fontSize: `${element.valueFontSize || 12}px`,
                 fontWeight: weightConstanta[element.valueFontWeight as CustomFontWeight] || 400,
                 letterSpacing: `${element.valueLetterSpacing ?? 0}px`,
+                textAlign: element.position === 'justify' && !isStacked ? 'right' : textAlignment,
                 wordBreak: "break-word"
               }}
             >

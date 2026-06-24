@@ -173,7 +173,7 @@ export default function PageHomeClient({settingData}: {settingData: SettingsData
                   Didukung OCR Menggunakan AI
                 </span>
                 <h3 className="text-xl md:text-2xl font-black tracking-tight text-white leading-tight">
-                  StrukApp <span className="text-white/40 font-normal">—</span> Buat Struk Digital Lebih Cepat
+                  ReceiptApp <span className="text-white/40 font-normal">—</span> Buat Struk Digital Lebih Cepat
                 </h3>
               </div>
               
