@@ -1,7 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { GoogleGenAI, Type } from "@google/genai";
 import { auth } from "@/lib/auth";
+import { decode } from "next-auth/jwt"; // 💡 IMPORT UNTUK DEKODE TOKEN HEADER FLUTTER
 import { ID_LICENSE_FREE } from "@/lib/constanta";
 import { prisma } from "@/lib/prisma";
 
@@ -12,25 +12,49 @@ const ai = new GoogleGenAI({ apiKey });
 
 export async function POST(req: Request) {
   try {
-    // 1. Validasi Device Fingerprint via Cookies
-    const cookieStore = await cookies();
-    const deviceId = cookieStore.get('device_fingerprint')?.value;
+    let userId: string | undefined = undefined;
 
-    if (!deviceId) {
-      return NextResponse.json({ error: "ID Perangkat tidak ditemukan" }, { status: 400 });
-    }
-
-    // 2. Validasi Sesi & Kuota OCR User
+    // =========================================================================
+    // 1. AUTENTIKASI GABUNGAN (WEB COOKIE & FLUTTER BEARER TOKEN)
+    // =========================================================================
     const session = await auth();
     if (session?.user?.id) {
+      userId = session.user.id;
+    } else {
+      // Jika session web null, coba ekstrak token dari header Authorization Dio Flutter
+      const authHeader = req.headers.get("authorization");
+      const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+      if (tokenFromHeader) {
+        try {
+          const decoded = await decode({
+            token: tokenFromHeader,
+            secret: process.env.AUTH_SECRET!,
+            salt: "authjs.session-token",
+          });
+          userId = decoded?.sub;
+        } catch (decodeError) {
+          console.error("Gagal mendekode token di Vision OCR API:", decodeError);
+        }
+      }
+    }
+
+    // =========================================================================
+    // 2. VALIDASI KUOTA OCR USER JIKA USER BERHASIL TERAUTENTIKASI
+    // =========================================================================
+    if (userId) {
       const rows = await prisma.$queryRawUnsafe<Array<{ kuota: number, license_id: string }>>(
-        `SELECT kuota, license_id FROM "user" WHERE id = $1 LIMIT 1`, session.user.id
+        `SELECT kuota, license_id FROM "user" WHERE id = $1 LIMIT 1`, userId
       );
       const userKuota = rows?.[0]?.kuota ?? 0;
       const licenseId = rows?.[0]?.license_id ?? ID_LICENSE_FREE;
-      if (userKuota <= 0 && licenseId != "l-platinum-tier") {
+      
+      if (userKuota <= 0 && licenseId !== "l-platinum-tier") {
         return NextResponse.json({ error: "Kuota OCR habis. Isi ulang kuota untuk melanjutkan." }, { status: 403 });
       }
+    } else {
+      // Proteksi tambahan: Jika request tidak membawa kredensial sama sekali, tolak request
+      return NextResponse.json({ error: "Unauthorized. Silakan login terlebih dahulu." }, { status: 401 });
     }
     
     // 3. Destrukturisasi Payload Request
@@ -118,7 +142,7 @@ export async function POST(req: Request) {
     - Gabungkan baris "STAND" dan "METER" jika posisinya berurutan menjadi satu kesatuan informasi, yaitu "STAND METER". Nilai dari stand meter tersebut adalah rentang angka di sebelahnya (Contoh: "00036267-00036601").
     - Ekstrak nomor 20 digit setelah teks "SN : " menjadi token. JANGAN masukkan nilai SN/Token ini ke dalam referensi.
     - Jika dalam gambar tidak terdapat kolom khusus nomor referensi transaksi maka set no referensi menjadi null. Jangan menduplikasi nomor token ke kolom referensi.
-    - Untuk struk listrik baris "Tujuan", petakan nilainya ke no meter, jika memang tiada baris no meter, jika ada baris no meter dan tujuan maka kasih aja ke ID Pelanggan, jangan sampai sama ID Pelanggan dan No Meter.
+    - Untuk struk listrik baris "Tujuan", petakan nilainya ke no meter, jika memang tiada baris no meter, jika ada baris no meter and tujuan maka kasih aja ke ID Pelanggan, jangan sampai sama ID Pelanggan dan No Meter.
     `;
 
     const contents = [
@@ -184,11 +208,13 @@ export async function POST(req: Request) {
         }
 
         // Jalankan pemotongan kuota jika transaksi sukses
-        if (session?.user?.id) {
+        if (userId) {
           try {
             const { prisma } = await import("@/lib/prisma");
-            await prisma.$executeRawUnsafe(`UPDATE "user" SET kuota = kuota - 1 WHERE id = $1 AND kuota > 0`, session.user.id);
-          } catch {}
+            await prisma.$executeRawUnsafe(`UPDATE "user" SET kuota = kuota - 1 WHERE id = $1 AND kuota > 0`, userId);
+          } catch (dbError) {
+            console.error("Gagal memotong kuota user:", dbError);
+          }
         }
 
         // Kembalikan data yang sudah bersih (Key kembali seperti config semula)

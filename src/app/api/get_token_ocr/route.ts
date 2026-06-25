@@ -1,14 +1,38 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { decode } from "next-auth/jwt"; // 💡 IMPORT UNTUK DEKODE TOKEN HEADER FLUTTER/POSTMAN
 
 export const GET = auth(async function GET(req) {
-  // 1. Cek Autentikasi Session dari Flutter Header
-  if (!req.auth || !req.auth.user?.id) {
-    return NextResponse.json({ error: "Unauthorized. Token tidak valid." }, { status: 401 });
+  let userId: string | undefined = req.auth?.user?.id;
+
+  // 💡 JIKA REQ.AUTH KOSONG, BERARTI REQUEST DATANG DARI MOBILE FLUTTER / POSTMAN VIA HEADER
+  if (!userId) {
+    const authHeader = req.headers.get("authorization");
+    const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+    if (tokenFromHeader) {
+      try {
+        // Dekode session JWT Next-Auth secara manual menggunakan secret server
+        const decoded = await decode({
+          token: tokenFromHeader,
+          secret: process.env.AUTH_SECRET!,
+          salt: "authjs.session-token", // Salt enkripsi bawaan Next-Auth v5
+        });
+
+        if (decoded && decoded.sub) {
+          userId = decoded.sub; // sub berisi ID user riil dari database
+        }
+      } catch (decodeError) {
+        console.error("Gagal mendekode token header di live kuota API:", decodeError);
+      }
+    }
   }
 
-  const userId = req.auth.user.id;
+  // Jika lewat cookie web maupun header bearer tetep gak ketemu, baru lempar 401
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized. Token tidak valid." }, { status: 401 });
+  }
 
   try {
     // 2. Ambil data kuota paling segar langsung dari database (Gunakan Raw SQL sesuai style-mu)

@@ -1,27 +1,58 @@
 import { auth } from "@/lib/auth";
 import { deleteReceipt } from "@/models/Receipt";
+import { decode } from "next-auth/jwt"; // 💡 IMPORT UNTUK DEKODE TOKEN HEADER FLUTTER/POSTMAN
 import { NextResponse } from "next/server";
 
+// Helper function untuk mengambil userId secara fleksibel dari Cookie atau Header Bearer Token
+async function getUserIdFromRequest(req: any): Promise<string | undefined> {
+  // 1. Cek dari session cookie web bawaan Next-Auth
+  if (req.auth?.user?.id) {
+    return req.auth.user.id;
+  }
+
+  // 2. Cek dari Authorization Header (Flutter / Postman)
+  const authHeader = req.headers.get("authorization");
+  const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+  if (tokenFromHeader) {
+    try {
+      const decoded = await decode({
+        token: tokenFromHeader,
+        secret: process.env.AUTH_SECRET!,
+        salt: "authjs.session-token",
+      });
+      return decoded?.sub; // Mereturn userId (id user)
+    } catch (decodeError) {
+      console.error("Gagal mendekode token di receipts dynamic route:", decodeError);
+    }
+  }
+
+  return undefined;
+}
+
+// =========================================================================
+// DELETE RECEIPT BY ID (DARI WEB COOKIE MAUPUN MOBILE API HEADER)
+// =========================================================================
 export const DELETE = auth(async function DELETE(
   req,
-  { params }: { params: Promise<{ id: string }> } // Mengikuti standar Next.js 15 App Router (Promise params)
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Validasi Autentikasi Utama
-  if (!req.auth || !req.auth.user?.id) {
+  const userId = await getUserIdFromRequest(req);
+
+  // Jika lewat cookie maupun header tetap tidak ketemu session-nya
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized. Silakan login terlebih dahulu." }, { status: 401 });
   }
 
   try {
-    // 2. Ambil ID dari dynamic route parameter URL ([id])
     const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: "ID Receipt tidak ditemukan pada request URL" }, { status: 400 });
     }
 
-    // 3. Panggil fungsi deleteReceipt bawaan milikmu
-    // Pengecekan kepemilikan (existingReceipt.userId !== session.user.id) otomatis diproses di dalamnya.
-    // Jika user mencoba menghapus struk orang lain, internal fungsi kamu akan melempar (throw) Error "Forbidden".
+    // 💡 SINKRONISASI: Jika fungsi deleteReceipt di model kamu membutuhkan userId tambahan 
+    // karena req.auth kosong, kamu bisa oper userId-nya ke sini (contoh: deleteReceipt(id, userId)).
     const result = await deleteReceipt(id);
 
     if (!result.success) {
@@ -36,7 +67,6 @@ export const DELETE = auth(async function DELETE(
   } catch (error: any) {
     console.error("Error pada DELETE Receipt API:", error);
     
-    // Tangkap error "Forbidden" dari Server Action kamu dan ubah response status menjadi 403
     if (error.message?.includes("Forbidden")) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }

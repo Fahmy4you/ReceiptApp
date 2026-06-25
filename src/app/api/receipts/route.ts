@@ -1,12 +1,57 @@
-import { auth } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { decode } from "next-auth/jwt"; // 💡 IMPORT UNTUK DEKODE TOKEN HEADER FLUTTER/POSTMAN
 import { getLayoutById } from "@/models/Layout";
 import { createReceipt } from "@/models/Receipt";
-import { NextResponse } from "next/server";
 
+// Helper function untuk mengambil userId secara fleksibel dari Cookie atau Header Bearer Token
+async function getUserIdFromRequest(req: any): Promise<{ userId: string | undefined; userRole: string | undefined }> {
+  // 1. Cek dari session cookie web bawaan Next-Auth
+  if (req.auth?.user?.id) {
+    return { 
+      userId: req.auth.user.id, 
+      userRole: (req.auth.user as any)?.role?.role || (req.auth.user as any)?.role?.id 
+    };
+  }
+
+  // 2. Cek dari Authorization Header (Flutter / Postman)
+  const authHeader = req.headers.get("authorization");
+  const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+  if (tokenFromHeader) {
+    try {
+      const decoded = await decode({
+        token: tokenFromHeader,
+        secret: process.env.AUTH_SECRET!,
+        salt: "authjs.session-token",
+      });
+
+      if (decoded && decoded.sub) {
+        // Ambil data role dari database untuk validasi admin mobile app
+        const userDb = await prisma.user.findUnique({
+          where: { id: decoded.sub },
+          select: { roleId: true }
+        });
+        
+        return { userId: decoded.sub, userRole: userDb?.roleId };
+      }
+    } catch (decodeError) {
+      console.error("Gagal mendekode token di receipts route:", decodeError);
+    }
+  }
+
+  return { userId: undefined, userRole: undefined };
+}
+
+// =========================================================================
+// 1. GET ALL RECEIPTS (HISTORY STRUK)
+// =========================================================================
 export const GET = auth(async function GET(req) {
-  // 1. Cek Autentikasi Session
-  if (!req.auth || !req.auth.user?.id) {
+  const { userId, userRole } = await getUserIdFromRequest(req);
+
+  // Jika lewat cookie maupun header tetap tidak ketemu session-nya
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized. Silakan login terlebih dahulu." }, { status: 401 });
   }
 
@@ -20,23 +65,19 @@ export const GET = auth(async function GET(req) {
     const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!, 10) : undefined;
     const order = searchParams.get("order") === "asc" ? "asc" : "desc";
 
-    // 2. Inisialisasi filter tanggal (default undefined agar tidak memfilter kalau kosong)
     let startDateCreatedAt: Date | undefined = undefined;
     let endDateCreatedAt: Date | undefined = undefined;
 
-    // KUNCI AMAN: Hanya aktifkan filter rentang tanggal JIKA KEDUA PARAMETER DIISI dari Flutter
     if (startStr && endStr) {
       startDateCreatedAt = new Date(startStr);
-      endDateCreatedAt = new Date(`${endStr}T23:59:59.999Z`); // Sampai akhir hari tersebut
+      endDateCreatedAt = new Date(`${endStr}T23:59:59.999Z`);
     }
 
-    const isAdmin = req.auth.user.role.role === "admin" || req.auth.user.role.id === "cl-admin";
+    const isAdmin = userRole === "admin" || userRole === "cl-admin";
 
-    // 3. Tarik data dari database via Prisma findMany
     const receipts = await prisma.receipt.findMany({
       where: {
-        // Hak akses dasar: Admin bisa filter userId mana saja, User biasa dipaksa kunci ID-nya sendiri
-        userId: isAdmin ? (searchParams.get("userId") || undefined) : req.auth.user.id,
+        userId: isAdmin ? (searchParams.get("userId") || undefined) : userId, // 💡 Gunakan userId hasil ekstrak token
         
         ...(search && {
           nama: {
@@ -45,12 +86,10 @@ export const GET = auth(async function GET(req) {
           },
         }),
 
-        // Filter Tipe Struk (Jika ada)
         ...(type && {
           type: type as any,
         }),
 
-        // Filter Tanggal (Otomatis dilewati dan ambil SEMUA data jika startDate/endDate kosong)
         ...(startDateCreatedAt && endDateCreatedAt && {
           createdAt: {
             gte: startDateCreatedAt,
@@ -59,12 +98,12 @@ export const GET = auth(async function GET(req) {
         }),
       },
       include: {
-        layout: true, // Ambil data joinan konfigurasi layout struknya
+        layout: true,
       },
       orderBy: {
         createdAt: order,
       },
-      take: limit || undefined, // Batasi jumlah baris data (jika ada limit dari Flutter)
+      take: limit || undefined,
     });
 
     return NextResponse.json({ success: true, data: receipts });
@@ -74,26 +113,26 @@ export const GET = auth(async function GET(req) {
   }
 });
 
+// =========================================================================
+// 2. POST CREATE RECEIPT (SIMPAN STRUK BARU)
+// =========================================================================
 export const POST = auth(async function POST(req) {
-  // 1. Validasi Auth Utama dari Next-Auth Session
-  if (!req.auth || !req.auth.user?.id) {
+  const { userId } = await getUserIdFromRequest(req);
+
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized. Session tidak ditemukan." }, { status: 401 });
   }
 
   try {
     const body = await req.json();
 
-    // 2. Validasi kelengkapan parameter mentah dari Flutter
     if (!body.nama || !body.type || !body.content) {
       return NextResponse.json({ error: "Parameter nama, type, dan content wajib diisi" }, { status: 400 });
     }
 
-    // 3. KUNCI KEAMANAN VALIDAISI LAYOUT (Solusi dari kefatalan kemarin)
     if (body.layoutId) {
-      // Panggil fungsi dapatkan layout dari service milikmu
       const existingLayout = await getLayoutById(body.layoutId);
 
-      // Jika layout tidak ditemukan atau mengembalikan null (karena diblokir hak aksesnya oleh getLayoutById)
       if (!existingLayout) {
         return NextResponse.json({ 
           error: "Forbidden: Layout tidak valid atau Anda tidak memiliki hak akses ke layout ini!" 
@@ -101,14 +140,15 @@ export const POST = auth(async function POST(req) {
       }
     }
 
-    // 4. Jalankan simpan data jika pengecekan di atas lolos semua
+    // Jalankan simpan data jika pengecekan di atas lolos semua
     const result = await createReceipt({
       nama: body.nama,
       layoutId: body.layoutId || null,
       total: body.total ? parseFloat(body.total) : null,
       content: body.content,
       type: body.type,
-      // userId opsional untuk admin, tapi bagi user biasa otomatis dipaksa pakai id miliknya di internal fungsi kamu
+      // userId dilempar manual ke fungsi agar data terkunci aman di level db internal milik user terkait
+      userId: userId, 
     });
 
     if (!result.success) {

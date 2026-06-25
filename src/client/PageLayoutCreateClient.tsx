@@ -84,7 +84,7 @@ const PageLayoutCreateClient = ({name, config, idLayout}: {name?: string, config
         } as any;
         break;
       case 'input_image':
-        newEl = { id, type: 'input_image', width: 120, height: 60, source: 'logo', marginTop: 10, marginBawah: 10 };
+        newEl = { id, type: 'input_image', width: 120, height: 60, source: 'logo', marginTop: 10, marginBottom: 10 };
         break;
       case 'text':
         newEl = { id, type: 'text', value: 'Teks Baru', fontSize: 14, fontWeight: 'reg', alignment: 'left', color: '#1a1a1a', marginTop: 5, marginBottom: 5, letterSpacing: 0 } as any; // Diubah ke 14 (Small)

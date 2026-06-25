@@ -1,13 +1,48 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { decode } from "next-auth/jwt"; // 💡 IMPORT UNTUK DEKODE TOKEN HEADER FLUTTER/POSTMAN
 import { createLayout } from "@/models/Layout";
 
 // =========================================================================
-// 1. GET ALL LAYOUTS (DENGAN SEARCH NAMA & FILTER COCOK UNTUK FLUTTER)
+// 1. GET ALL LAYOUTS (SUPPORT COOKIE WEB & HEADER BEARER MOBILE)
 // =========================================================================
 export const GET = auth(async function GET(req) {
-  if (!req.auth || !req.auth.user?.id) {
+  let userId: string | undefined = req.auth?.user?.id;
+  let userRole: string | undefined = (req.auth?.user as any)?.role?.role || (req.auth?.user as any)?.role?.id;
+
+  // 💡 JIKA REQ.AUTH KOSONG, BERARTI REQUEST DATANG DARI FLUTTER / POSTMAN VIA HEADER
+  if (!userId) {
+    const authHeader = req.headers.get("authorization");
+    const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+    if (tokenFromHeader) {
+      try {
+        // Dekode session JWT Next-Auth secara manual menggunakan secret server
+        const decoded = await decode({
+          token: tokenFromHeader,
+          secret: process.env.AUTH_SECRET!,
+          salt: "authjs.session-token", // Salt enkripsi bawaan Next-Auth v5
+        });
+
+        if (decoded && decoded.sub) {
+          userId = decoded.sub; // sub berisi userRow.id yang kita inject kemarin
+          
+          // Ambil data role dari DB berdasarkan userId untuk keperluan pengecekan admin
+          const userDb = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { roleId: true }
+          });
+          userRole = userDb?.roleId; 
+        }
+      } catch (decodeError) {
+        console.error("Gagal mendekode token header:", decodeError);
+      }
+    }
+  }
+
+  // Cek validasi akhir, jika lewat cookie maupun header tetep ga ketemu, baru lempar 401
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
   }
 
@@ -17,15 +52,12 @@ export const GET = auth(async function GET(req) {
     const order = searchParams.get("order") === "asc" ? "asc" : "desc";
     const sortBy = (searchParams.get("sortBy") as any) || "createdAt";
 
-    const isAdmin = req.auth.user.role.role === "admin" || req.auth.user.role.id === "cl-admin";
+    // Validasi apakah dia admin (mendukung string role_id maupun object role bawaanmu)
+    const isAdmin = userRole === "admin" || userRole === "cl-admin";
 
-    // Kita gunakan prisma.findMany langsung agar bisa fleksibel handle search text sensitif
     const layouts = await prisma.layout.findMany({
       where: {
-        // Keamanan dasar: Admin bisa lihat siapa saja, user biasa dikunci ke ID-nya sendiri
-        userId: isAdmin ? (searchParams.get("userId") || undefined) : req.auth.user.id,
-        
-        // Fitur SEARCH berdasarkan nama layout (misal: "STRUK TOKEN")
+        userId: isAdmin ? (searchParams.get("userId") || undefined) : userId,
         ...(search && {
           name: {
             contains: search,
@@ -46,10 +78,29 @@ export const GET = auth(async function GET(req) {
 });
 
 // =========================================================================
-// 2. POST CREATE LAYOUT (MEMBUAT TEMPLATE STRUK BARU)
+// 2. POST CREATE LAYOUT
 // =========================================================================
 export const POST = auth(async function POST(req) {
-  if (!req.auth || !req.auth.user?.id) {
+  let userId: string | undefined = req.auth?.user?.id;
+
+  // Sinkronisasi token untuk request POST (sama seperti GET di atas)
+  if (!userId) {
+    const authHeader = req.headers.get("authorization");
+    const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+    if (tokenFromHeader) {
+      try {
+        const decoded = await decode({
+          token: tokenFromHeader,
+          secret: process.env.AUTH_SECRET!,
+          salt: "authjs.session-token",
+        });
+        userId = decoded?.sub;
+      } catch (_) {}
+    }
+  }
+
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -60,12 +111,11 @@ export const POST = auth(async function POST(req) {
       return NextResponse.json({ error: "Parameter name dan config wajib diisi" }, { status: 400 });
     }
 
-    // Panggil fungsi createLayout bawaan milikmu (otomatis handle reset isDefault ke false untuk layout lain)
     const result = await createLayout({
       name: body.name,
       config: body.config,
       isDefault: body.isDefault || false,
-      // userId otomatis diarahkan ke session.user.id di dalam fungsi kamu jika bukan admin
+      userId: userId, // Oper userId yang valid ke model
     });
 
     if (!result.success) {

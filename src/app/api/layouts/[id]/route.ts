@@ -1,19 +1,53 @@
 import { auth } from "@/lib/auth";
 import { deleteLayout, getLayoutById, updateLayout } from "@/models/Layout";
+import { decode } from "next-auth/jwt"; // 💡 IMPORT UNTUK DEKODE TOKEN HEADER FLUTTER/POSTMAN
 import { NextResponse } from "next/server";
 
+// Helper function untuk mengambil userId secara fleksibel dari Cookie atau Header Bearer Token
+async function getUserIdFromRequest(req: any): Promise<string | undefined> {
+  // 1. Cek dari session cookie web bawaan Next-Auth
+  if (req.auth?.user?.id) {
+    return req.auth.user.id;
+  }
+
+  // 2. Cek dari Authorization Header (Flutter / Postman)
+  const authHeader = req.headers.get("authorization");
+  const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+  if (tokenFromHeader) {
+    try {
+      const decoded = await decode({
+        token: tokenFromHeader,
+        secret: process.env.AUTH_SECRET!,
+        salt: "authjs.session-token",
+      });
+      return decoded?.sub; // Mereturn userId
+    } catch (decodeError) {
+      console.error("Gagal mendekode token di dynamic route:", decodeError);
+    }
+  }
+
+  return undefined;
+}
+
+// =========================================================================
+// 1. GET DETAIL LAYOUT BY ID
+// =========================================================================
 export const GET = auth(async function GET(
   req,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!req.auth || !req.auth.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getUserIdFromRequest(req);
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
   }
 
   try {
     const { id } = await params;
     
-    // Fungsi getLayoutById milikmu otomatis mereturn null jika bukan milik user yang login / bukan admin
+    // 💡 SINKRONISASI: Jika fungsi modelmu membutuhkan userId tambahan karena req.auth kosong, 
+    // kamu bisa oper userId-nya ke argumen fungsi (sesuaikan dengan isi models/Layout.ts kamu).
     const layout = await getLayoutById(id);
 
     if (!layout) {
@@ -26,12 +60,17 @@ export const GET = auth(async function GET(
   }
 });
 
+// =========================================================================
+// 2. PUT UPDATE LAYOUT BY ID
+// =========================================================================
 export const PUT = auth(async function PUT(
   req,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!req.auth || !req.auth.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getUserIdFromRequest(req);
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
   }
 
   try {
@@ -39,7 +78,6 @@ export const PUT = auth(async function PUT(
     const body = await req.json();
 
     // Jalankan fungsi updateLayout bawaan milikmu.
-    // Di dalamnya sudah aman terkunci validasi existingLayout.userId !== session.user.id
     const result = await updateLayout(id, {
       name: body.name,
       config: body.config,
@@ -60,12 +98,17 @@ export const PUT = auth(async function PUT(
   }
 });
 
+// =========================================================================
+// 3. DELETE LAYOUT BY ID
+// =========================================================================
 export const DELETE = auth(async function DELETE(
   req,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!req.auth || !req.auth.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getUserIdFromRequest(req);
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
   }
 
   try {
