@@ -322,7 +322,7 @@ export default function PageHomeClient({settingData}: {settingData: SettingsData
         <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-900 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-bold text-sm md:text-base">Aktivitas Terkini</h4>
+                <h4 className="font-bold text-sm md:text-base">Aktivitas Terakhir</h4>
                 <Link href={"/history"} className="text-xs cursor-pointer text-blue-500 font-bold hover:underline">
                   Semua
                 </Link>

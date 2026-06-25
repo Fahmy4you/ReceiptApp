@@ -67,20 +67,36 @@ export const getLayoutById = async (id: string) => {
 /**
  * Create Layout
  */
-export const createLayout = async (data: {
-  name: string;
-  config: any;
-  userId?: string;
-  isDefault?: boolean;
-}) => {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthenticated");
+export const createLayout = async (
+  data: {
+    name: string;
+    config: any;
+    userId?: string;
+    isDefault?: boolean;
+  },
+  // 💡 Injection parameter opsional untuk support mobile app via Bearer Token
+  overrideUser?: { id: string; roleId: string; roleName: string }
+) => {
+  let currentUserId = "";
+  let isAdmin = false;
 
-  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
-  const targetUserId = isAdmin && data.userId ? data.userId : session.user.id;
+  if (overrideUser) {
+    // 🔥 REQUEST DARI MOBILE FLUTTER
+    isAdmin = overrideUser.roleName === "admin" || overrideUser.roleId === "cl-admin";
+    currentUserId = overrideUser.id;
+  } else {
+    // 🌐 REQUEST DARI WEB NEXT.JS
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthenticated");
+
+    isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+    currentUserId = session.user.id;
+  }
+
+  const targetUserId = isAdmin && data.userId ? data.userId : currentUserId;
 
   // Validasi user target ada
-  const user = await getUserById(targetUserId);
+  const user = await prisma.user.findUnique({ where: { id: targetUserId } });
   if (!user) throw new Error("User target tidak ditemukan");
 
   try {
@@ -111,22 +127,38 @@ export const createLayout = async (data: {
 /**
  * Update Layout
  */
-export const updateLayout = async (id: string, data: {
-  name?: string;
-  config?: any;
-  isDefault?: boolean;
-  userId?: string;
-}) => {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthenticated");
+export const updateLayout = async (
+  id: string, 
+  data: {
+    name?: string;
+    config?: any;
+    isDefault?: boolean;
+    userId?: string;
+  },
+  // 💡 Injection parameter opsional untuk support mobile app via Bearer Token
+  overrideUser?: { id: string; roleId: string; roleName: string }
+) => {
+  let currentUserId = "";
+  let isAdmin = false;
 
-  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  if (overrideUser) {
+    // 🔥 REQUEST DARI MOBILE FLUTTER
+    isAdmin = overrideUser.roleName === "admin" || overrideUser.roleId === "cl-admin";
+    currentUserId = overrideUser.id;
+  } else {
+    // 🌐 REQUEST DARI WEB NEXT.JS
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthenticated");
+
+    isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+    currentUserId = session.user.id;
+  }
 
   const existingLayout = await prisma.layout.findUnique({ where: { id } });
   if (!existingLayout) throw new Error("Layout tidak ditemukan");
 
   // Proteksi kepemilikan
-  if (!isAdmin && existingLayout.userId !== session.user.id) {
+  if (!isAdmin && existingLayout.userId !== currentUserId) {
     throw new Error("Forbidden: Akses ditolak");
   }
 
@@ -161,16 +193,31 @@ export const updateLayout = async (id: string, data: {
 /**
  * Delete Layout
  */
-export const deleteLayout = async (id: string) => {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthenticated");
+export const deleteLayout = async (
+  id: string,
+  // 💡 Injection parameter opsional untuk support mobile app via Bearer Token
+  overrideUser?: { id: string; roleId: string; roleName: string }
+) => {
+  let currentUserId = "";
+  let isAdmin = false;
 
-  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  if (overrideUser) {
+    // 🔥 REQUEST DARI MOBILE FLUTTER
+    isAdmin = overrideUser.roleName === "admin" || overrideUser.roleId === "cl-admin";
+    currentUserId = overrideUser.id;
+  } else {
+    // 🌐 REQUEST DARI WEB NEXT.JS
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthenticated");
+
+    isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+    currentUserId = session.user.id;
+  }
 
   const existingLayout = await prisma.layout.findUnique({ where: { id } });
   if (!existingLayout) throw new Error("Layout tidak ditemukan");
 
-  if (!isAdmin && existingLayout.userId !== session.user.id) {
+  if (!isAdmin && existingLayout.userId !== currentUserId) {
     throw new Error("Forbidden: Akses ditolak");
   }
 

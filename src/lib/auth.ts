@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { authConfig } from "@/lib/auth.config"
 import bcrypt from "bcryptjs"
 import { DEFAULT_SETTINGS_FIRST_LOGIN, DefaultConfigLayout, DefaultEwalletLayout, DefaultListrikLayout, DefaultTagihanLayout } from "@/lib/constanta"
+import { decode } from "next-auth/jwt"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -143,3 +144,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }
   },
 })
+
+export async function getUserIdFromRequest(req: any): Promise<{ userId: string | undefined; userRole: string | undefined }> {
+  // 1. Cek dari session cookie web bawaan Next-Auth
+  if (req.auth?.user?.id) {
+    return { 
+      userId: req.auth.user.id, 
+      userRole: (req.auth.user as any)?.role?.role || (req.auth.user as any)?.role?.id 
+    };
+  }
+
+  // 2. Cek dari Authorization Header (Flutter / Postman)
+  const authHeader = req.headers.get("authorization");
+  const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+  if (tokenFromHeader) {
+    try {
+      const decoded = await decode({
+        token: tokenFromHeader,
+        secret: process.env.AUTH_SECRET!,
+        salt: "authjs.session-token",
+      });
+
+      if (decoded && decoded.sub) {
+        // Ambil data role dari database untuk validasi admin via mobile app
+        const userDb = await prisma.user.findUnique({
+          where: { id: decoded.sub },
+          select: { roleId: true }
+        });
+        
+        return { userId: decoded.sub, userRole: userDb?.roleId };
+      }
+    } catch (decodeError) {
+      console.error("Gagal mendekode token di settings route:", decodeError);
+    }
+  }
+
+  return { userId: undefined, userRole: undefined };
+}

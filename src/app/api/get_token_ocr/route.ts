@@ -48,11 +48,12 @@ export const GET = auth(async function GET(req) {
     }
 
     // 3. Tarik nama lisensinya juga buat jaga-jaga kalau dia upgrade tier (Biar ikut update di Flutter)
-    const licRows = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
-      `SELECT name FROM license WHERE id = $1 LIMIT 1`, 
+    const licRows = await prisma.$queryRawUnsafe<Array<{ id: string, name: string }>>(
+      `SELECT id, name FROM license WHERE id = $1 LIMIT 1`, 
       userRow.license_id
     );
     const licenseName = licRows?.[0]?.name || "Free Tier";
+    const licenseId = licRows?.[0]?.id || "l-free-tier";
 
     // 4. Kembalikan data LIVE token/kuota terupdate
     return NextResponse.json({
@@ -60,7 +61,8 @@ export const GET = auth(async function GET(req) {
       data: {
         userId: userId,
         kuota: userRow.kuota, // Ini sisa kuota OCR/scan live dari DB
-        license: licenseName  // Nama lisensi live (Free Tier / Premium)
+        license: licenseName,  // Nama lisensi live (Free Tier / Premium)
+        license_id: licenseId
       }
     });
 

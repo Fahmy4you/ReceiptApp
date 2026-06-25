@@ -40,13 +40,26 @@ export const getAllSettings = async (filters?: {
   }
 };
 
-export const getSettingByUserId = async (targetUserId?: string) => {
-  const session = await auth();
-  if (!session) throw new Error("Unauthenticated");
+export const getSettingByUserId = async (
+  targetUserId?: string,
+  // 💡 Tambahkan parameter opsional injection untuk support mobile app
+  overrideUser?: { id: string; roleId: string; roleName: string }
+) => {
+  let finalUserId = "";
+  let isAdmin = false;
 
-  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
-  // Jika bukan admin, paksa ambil ID diri sendiri
-  const finalUserId = isAdmin && targetUserId ? targetUserId : session.user.id;
+  if (overrideUser) {
+    // 🔥 JIKA REQUEST DARI FLUTTER (Menggunakan data injection dari API Route)
+    isAdmin = overrideUser.roleName === "admin" || overrideUser.roleId === "cl-admin";
+    finalUserId = isAdmin && targetUserId ? targetUserId : overrideUser.id;
+  } else {
+    // 🌐 JIKA REQUEST DARI WEB SPERTI BIASA
+    const session = await auth();
+    if (!session) throw new Error("Unauthenticated");
+
+    isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+    finalUserId = isAdmin && targetUserId ? targetUserId : session.user.id;
+  }
 
   try {
     const settings = await prisma.settings.findFirst({

@@ -1,6 +1,5 @@
 "use server"
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 import { Prisma, TypeReceipt } from "@prisma/client";
 import { ROLES } from "@/lib/constanta";
 import { getUserById } from "./User";
@@ -247,11 +246,26 @@ export const getAllReceiptsAdmin = async (filters?: {
   }
 };
 
-export const deleteReceipt = async (id: string) => {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthenticated");
+export const deleteReceipt = async (
+  id: string,
+  // 💡 Tambahkan parameter opsional injection untuk support mobile app (Bearer Token)
+  overrideUser?: { id: string; roleId: string; roleName: string }
+) => {
+  let currentUserId = "";
+  let isAdmin = false;
 
-  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+  if (overrideUser) {
+    // 🔥 JIKA REQUEST DARI FLUTTER (Menggunakan data injection dari API Route)
+    isAdmin = overrideUser.roleName === "admin" || overrideUser.roleId === "cl-admin"; // Sesuaikan ID admin websitemu jika berbeda
+    currentUserId = overrideUser.id;
+  } else {
+    // 🌐 JIKA REQUEST DARI WEB SEPERTI BIASA (Menggunakan Next-Auth Session)
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthenticated");
+
+    isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+    currentUserId = session.user.id;
+  }
 
   // 1. Cari data untuk cek validitas & kepemilikan
   const existingReceipt = await prisma.receipt.findUnique({
@@ -260,8 +274,8 @@ export const deleteReceipt = async (id: string) => {
 
   if (!existingReceipt) throw new Error("Receipt not found");
 
-  // 2. Security Check: Bukan admin & bukan pemilik? Blokir.
-  if (!isAdmin && existingReceipt.userId !== session.user.id) {
+  // 2. Security Check: Bukan admin & bukan pemilik asli? Blokir langsung!
+  if (!isAdmin && existingReceipt.userId !== currentUserId) {
     throw new Error("Forbidden: Anda tidak diizinkan menghapus data ini");
   }
 

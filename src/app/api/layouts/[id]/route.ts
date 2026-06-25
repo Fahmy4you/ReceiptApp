@@ -1,34 +1,6 @@
-import { auth } from "@/lib/auth";
+import { auth, getUserIdFromRequest } from "@/lib/auth";
 import { deleteLayout, getLayoutById, updateLayout } from "@/models/Layout";
-import { decode } from "next-auth/jwt"; // 💡 IMPORT UNTUK DEKODE TOKEN HEADER FLUTTER/POSTMAN
 import { NextResponse } from "next/server";
-
-// Helper function untuk mengambil userId secara fleksibel dari Cookie atau Header Bearer Token
-async function getUserIdFromRequest(req: any): Promise<string | undefined> {
-  // 1. Cek dari session cookie web bawaan Next-Auth
-  if (req.auth?.user?.id) {
-    return req.auth.user.id;
-  }
-
-  // 2. Cek dari Authorization Header (Flutter / Postman)
-  const authHeader = req.headers.get("authorization");
-  const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
-
-  if (tokenFromHeader) {
-    try {
-      const decoded = await decode({
-        token: tokenFromHeader,
-        secret: process.env.AUTH_SECRET!,
-        salt: "authjs.session-token",
-      });
-      return decoded?.sub; // Mereturn userId
-    } catch (decodeError) {
-      console.error("Gagal mendekode token di dynamic route:", decodeError);
-    }
-  }
-
-  return undefined;
-}
 
 // =========================================================================
 // 1. GET DETAIL LAYOUT BY ID
@@ -37,7 +9,7 @@ export const GET = auth(async function GET(
   req,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserIdFromRequest(req);
+  const { userId } = await getUserIdFromRequest(req);
 
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
@@ -67,7 +39,7 @@ export const PUT = auth(async function PUT(
   req,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserIdFromRequest(req);
+  const { userId } = await getUserIdFromRequest(req);
 
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
@@ -105,7 +77,8 @@ export const DELETE = auth(async function DELETE(
   req,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getUserIdFromRequest(req);
+  // 💡 Ambil userId dan userRole dari request header/cookie global helper
+  const { userId, userRole } = await getUserIdFromRequest(req);
 
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
@@ -114,8 +87,12 @@ export const DELETE = auth(async function DELETE(
   try {
     const { id } = await params;
 
-    // Fungsi deleteLayout milikmu otomatis mengecek kepemilikan sebelum menghapus baris di Prisma
-    const result = await deleteLayout(id);
+    // 💡 SINKRONISASI: Kirim payload data auth sebagai parameter kedua ke action
+    const result = await deleteLayout(id, {
+      id: userId,
+      roleId: userRole || "",
+      roleName: userRole || ""
+    });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
@@ -124,9 +101,12 @@ export const DELETE = auth(async function DELETE(
     return NextResponse.json({ success: true, message: result.message });
   } catch (error: any) {
     console.error("Error pada DELETE Layout API:", error);
-    if (error.message?.includes("Forbidden")) {
+    
+    // Deteksi jika error dilempar karena masalah hak akses ownership (Forbidden)
+    if (error.message?.includes("Forbidden") || error.message?.includes("ditolak")) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
+    
     return NextResponse.json({ error: error.message || "Gagal menghapus layout" }, { status: 500 });
   }
 });
