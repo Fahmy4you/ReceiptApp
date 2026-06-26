@@ -43,10 +43,11 @@ export const GET = auth(async function GET(req) {
 // 2. POST UPSERT SETTINGS (SIMPAN/UPDATE KONFIGURASI TOKO)
 // =========================================================================
 export const POST = auth(async function POST(req) {
-  const { userId } = await getUserIdFromRequest(req);
+  // 💡 Gunakan helper yang sama agar validasi token mobile seragam
+  const { userId, userRole } = await getUserIdFromRequest(req);
 
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized. Silakan login terlebih dahulu." }, { status: 401 });
   }
 
   try {
@@ -56,10 +57,17 @@ export const POST = auth(async function POST(req) {
       return NextResponse.json({ error: "Payload data pengaturan wajib diisi" }, { status: 400 });
     }
 
-    // Panggil fungsi action bawaan milikmu yang sudah terintegrasi auto-delete file logo lama
+    const isAdmin = userRole === "admin" || userRole === "cl-admin";
+    const targetUserId = isAdmin ? (body.userId || userId) : userId;
+
+    // 💡 SUNTIKKAN OVERRIDE USER SAMA SEPERTI DI GET NYA
     const result = await upsertSettingsAction({
-      userId: body.userId || userId, // 💡 Force gunakan userId hasil ekstrak token jika bukan admin
+      userId: targetUserId, 
       data: body.data, 
+    }, {
+      id: userId,
+      roleId: userRole || "",
+      roleName: userRole || ""
     });
 
     if (!result.success) {

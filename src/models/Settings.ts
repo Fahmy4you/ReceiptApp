@@ -74,44 +74,44 @@ export const getSettingByUserId = async (
 };
 
 
-export const upsertSettings = async (data: {
-  userId?: string;
-  data: any; // Ini field 'data' di model yang bertipe Json
-}) => {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthenticated");
+// export const upsertSettings = async (data: {
+//   userId?: string;
+//   data: any; // Ini field 'data' di model yang bertipe Json
+// }) => {
+//   const session = await auth();
+//   if (!session?.user?.id) throw new Error("Unauthenticated");
 
-  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
-  const finalUserId = isAdmin && data.userId ? data.userId : session.user.id;
+//   const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+//   const finalUserId = isAdmin && data.userId ? data.userId : session.user.id;
 
-  try {
-    // Cari dulu apakah sudah ada
-    const existingSettings = await prisma.settings.findFirst({
-      where: { userId: finalUserId }
-    });
+//   try {
+//     // Cari dulu apakah sudah ada
+//     const existingSettings = await prisma.settings.findFirst({
+//       where: { userId: finalUserId }
+//     });
 
-    if (existingSettings) {
-      // Jika ada, update
-      const updated = await prisma.settings.update({
-        where: { id: existingSettings.id },
-        data: { data: data.data },
-      });
-      return { success: true, action: "update", data: updated };
-    } else {
-      // Jika belum ada, create
-      const created = await prisma.settings.create({
-        data: {
-          userId: finalUserId,
-          data: data.data,
-        },
-      });
-      return { success: true, action: "create", data: created };
-    }
-  } catch (error) {
-    console.error("Error upserting settings:", error);
-    return { success: false, error: "Gagal menyimpan pengaturan" };
-  }
-};
+//     if (existingSettings) {
+//       // Jika ada, update
+//       const updated = await prisma.settings.update({
+//         where: { id: existingSettings.id },
+//         data: { data: data.data },
+//       });
+//       return { success: true, action: "update", data: updated };
+//     } else {
+//       // Jika belum ada, create
+//       const created = await prisma.settings.create({
+//         data: {
+//           userId: finalUserId,
+//           data: data.data,
+//         },
+//       });
+//       return { success: true, action: "create", data: created };
+//     }
+//   } catch (error) {
+//     console.error("Error upserting settings:", error);
+//     return { success: false, error: "Gagal menyimpan pengaturan" };
+//   }
+// };
 
 
 export const deleteSettings = async (id: string) => {
@@ -144,13 +144,24 @@ export const deleteSettings = async (id: string) => {
 
 export const upsertSettingsAction = async (data: {
   userId?: string;
-  data: any; 
-}) => {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthenticated");
+  data: any;
+}, overrideUser?: { id: string; roleId: string; roleName: string }) => { // 💡 Tambahkan parameter overrideUser di sini
+  
+  let finalUserId = "";
+  let isAdmin = false;
 
-  const isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
-  const finalUserId = isAdmin && data.userId ? data.userId : session.user.id;
+  if (overrideUser) {
+    // 🔥 JIKA REQUEST DARI FLUTTER (Menggunakan data injection dari API Route)
+    isAdmin = overrideUser.roleName === "admin" || overrideUser.roleId === "cl-admin";
+    finalUserId = isAdmin && data.userId ? data.userId : overrideUser.id;
+  } else {
+    // 🌐 JIKA REQUEST DARI WEB SEPERTI BIASA
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthenticated");
+
+    isAdmin = session.user.role.role == ROLES[0].value || session.user.role.id == ROLES[0].id;
+    finalUserId = isAdmin && data.userId ? data.userId : session.user.id;
+  }
 
   // Variabel untuk menampung path file yang akan dihapus nanti
   let fileToDelete: string | null = null;
@@ -165,7 +176,7 @@ export const upsertSettingsAction = async (data: {
       const newData = data.data;
 
       // 1. Tentukan apakah ada file yang perlu dihapus
-      if (oldData?.logo && newData?.logo && oldData.logo != newData.logo && oldData.logo) {
+      if (oldData?.logo && newData?.logo && oldData.logo !== newData.logo) {
         if (oldData.logo.startsWith("/image/upload/")) {
           // Kita simpan path-nya saja, JANGAN dihapus dulu
           fileToDelete = oldData.logo;
